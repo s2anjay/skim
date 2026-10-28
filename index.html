@@ -251,7 +251,7 @@ const paintFold = () => $('#fold').textContent = visible.some(u => openSet.has(u
 let seeded = false, visible = [], kw = '', srcPick = '';
 let view = store.get('view', 'list'), enterT;
 const off = new Set(store.get('off', [])); // urls of sources switched off
-let srcsOpen = store.get('srcsOpen', innerWidth >= 640);
+let srcsOpen = store.get('srcsOpen', false);
 let limit = store.get('limit', innerWidth < 640 ? 8 : 30);
 const eff = c => { const o = over[c.url] || {}; return { ...c, name: o.name || c.source, category: o.category || c.category, type: o.type || c.type, hidden: !!o.hidden }; };
 const saveOver = () => store.set('over', over);
@@ -421,7 +421,7 @@ function render(enter) {
     h('button', { className: 'mini', textContent: 'Publishers', onclick: () => setOff(c => c.type === 'aggregator') }),
     ...(pickName ? [h('button', { className: 'pick', textContent: pickName + ' ×', title: 'Show all sources', onclick: () => { srcPick = ''; render(); } })] : []),
     h('span', { className: 'sp' }),
-    seg('', [['cards', 'Cards'], ['list', 'List']], view, v => { view = v; store.set('view', v); }));
+    seg('', [['list', 'List'], ['cards', 'Cards']], view, v => { view = v; store.set('view', v); }));
   $('#fold').hidden = view === 'list';
   $('#grid').className = (view === 'list' ? 'flat' : '') + (enter ? ' enter' : '');
   clearTimeout(enterT);
