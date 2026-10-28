@@ -1,0 +1,14 @@
+[
+  { "name": "Techmeme", "url": "https://www.techmeme.com/feed.xml", "category": "Tech", "site": "https://www.techmeme.com" },
+  { "name": "Hacker News", "url": "https://hnrss.org/newest?points=20", "category": "Tech", "site": "https://news.ycombinator.com", "modes": { "Top": "https://hnrss.org/frontpage" } },
+  { "name": "Lobsters", "url": "https://lobste.rs/rss", "category": "Tech" },
+  { "name": "NPR", "url": "https://feeds.npr.org/1001/rss.xml", "category": "World", "site": "https://www.npr.org" },
+  { "name": "BBC World", "url": "https://feeds.bbci.co.uk/news/world/rss.xml", "category": "World", "site": "https://www.bbc.com/news/world" },
+  { "name": "CNBC", "url": "https://www.cnbc.com/id/100003114/device/rss/rss.html", "category": "Finance", "site": "https://www.cnbc.com" },
+  { "name": "MarketWatch", "url": "https://feeds.content.dowjones.io/public/rss/mw_topstories", "category": "Finance", "site": "https://www.marketwatch.com" },
+  { "name": "The Verge", "url": "https://www.theverge.com/rss/index.xml", "category": "Products" },
+  { "name": "Product Hunt", "url": "https://www.producthunt.com/feed", "category": "Products" },
+  { "name": "Simon Willison", "url": "https://simonwillison.net/atom/everything/", "category": "Claude and AI", "site": "https://simonwillison.net" },
+  { "name": "Interconnects", "url": "https://www.interconnects.ai/feed", "category": "Claude and AI", "site": "https://www.interconnects.ai" },
+  { "name": "Hugging Face", "url": "https://huggingface.co/blog/feed.xml", "category": "Claude and AI", "site": "https://huggingface.co/blog" }
+]

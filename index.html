@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skim</title>
+<meta name="description" content="Latest headlines from a fixed set of sources. Text only.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%238f98ff'/%3E%3Ctext x='16' y='23' font-size='20' font-family='serif' font-weight='700' text-anchor='middle' fill='%230a0e1f'%3ES%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Lora:wght@500;600&display=swap">
+<script>
+try { var t = localStorage.getItem('skim.theme'); t = t ? JSON.parse(t) : null; } catch (e) { t = null; }
+document.documentElement.dataset.theme = t || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+</script>
+<style>
+:root { --bg:#f8f8f5; --fg:#15171f; --mut:#6a6f85; --line:#e1e2e9; --acc:#4650d6; --on-acc:#fff; --panel:#fff; --hl:#eceefc; color-scheme:light }
+:root[data-theme=dark] { --bg:#0a0e1f; --fg:#f2f3fa; --mut:#8b91ab; --line:#1d2543; --acc:#9aa3ff; --on-acc:#0a0e1f; --panel:#10172e; --hl:#141c3a; color-scheme:dark }
+* { box-sizing:border-box }
+body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.4 Inter,system-ui,sans-serif; -webkit-font-smoothing:antialiased }
+.wrap { max-width:1180px; margin:0 auto; padding:0 16px }
+a { color:inherit; text-decoration:none }
+button, input { font:inherit; color:inherit }
+button { cursor:pointer }
+:focus-visible { outline:2px solid var(--acc); outline-offset:2px }
+
+.top { position:sticky; top:0; z-index:5; background:var(--bg); border-bottom:1px solid transparent }
+.top .wrap { display:flex; align-items:center; gap:10px; padding-top:16px; padding-bottom:12px }
+.logo { font:600 26px Lora,serif; letter-spacing:-.01em; margin-right:auto }
+.logo i { color:var(--acc); font-style:normal }
+#upd { color:var(--mut); font-size:13px }
+.btn { background:none; border:1px solid var(--line); border-radius:8px; padding:7px 14px; font-size:13px; font-weight:500 }
+.btn:hover { border-color:var(--mut) }
+.btn.pri { background:var(--acc); color:var(--on-acc); border-color:var(--acc) }
+.btn:disabled { opacity:.5; cursor:default }
+
+.search { position:relative; margin:4px 0 22px }
+.search input { width:100%; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:15px 48px 15px 46px; font-size:16px }
+.search input::placeholder { color:var(--mut) }
+.search svg { position:absolute; left:16px; top:50%; translate:0 -50%; width:18px; height:18px; stroke:var(--mut); fill:none; stroke-width:2 }
+.search kbd { position:absolute; right:14px; top:50%; translate:0 -50%; border:1px solid var(--line); border-radius:5px; padding:1px 7px; font:12px Inter,sans-serif; color:var(--mut) }
+
+.tabs { display:flex; gap:26px; overflow-x:auto; border-bottom:1px solid var(--line); margin-bottom:32px; scrollbar-width:none }
+.tabs button { background:none; border:0; border-bottom:2px solid transparent; padding:2px 0 14px; margin-bottom:-1px; color:var(--mut); white-space:nowrap }
+.tabs button:hover { color:var(--fg) }
+.tabs button[aria-pressed=true] { color:var(--fg); border-color:var(--acc) }
+
+#grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:40px 42px; padding-bottom:64px; align-items:start }
+.card { border-top:2px solid var(--fg); min-width:0 }
+.card header { display:flex; align-items:center; gap:14px; padding:12px 0 10px }
+.card h2 { margin:0 auto 0 0; font-size:14px; font-weight:600; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.mode { background:none; border:0; padding:0; font-size:12px; color:var(--mut); border-bottom:1px solid transparent }
+.mode[aria-pressed=true] { color:var(--fg); border-color:var(--fg) }
+.menu { position:relative }
+.menu summary { list-style:none; cursor:pointer; color:var(--mut); letter-spacing:1px; line-height:1 }
+.menu summary::-webkit-details-marker { display:none }
+.menu div { position:absolute; right:0; top:22px; z-index:3; background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:4px; min-width:150px; box-shadow:0 8px 24px #0004 }
+.menu div button { display:block; width:100%; text-align:left; background:none; border:0; padding:8px 10px; border-radius:6px; font-size:13px }
+.menu div button:hover { background:var(--hl) }
+
+.row { display:grid; grid-template-columns:52px 1fr; gap:0 8px; padding:9px 10px 9px 0; margin-left:0; border-bottom:1px solid var(--line); border-radius:8px }
+.row:last-of-type { border-bottom-color:transparent }
+.t { position:relative; padding-left:12px; font-size:13px; color:var(--mut); padding-top:3px }
+.t::before { content:''; position:absolute; left:0; top:4px; height:16px; width:3px; border-radius:2px; background:var(--acc) }
+.row a { font:500 17px/1.3 Lora,serif }
+.a1 .t::before { opacity:.65 } .a2 .t::before { opacity:.3 }
+.a2 a { color:var(--mut) }
+.row:has(a:focus-visible) { background:var(--hl); box-shadow:-8px 0 0 var(--hl); border-color:transparent }
+.row a:focus-visible { outline:0; color:var(--acc) }
+.foot, .err, .empty { font-size:13px; color:var(--mut); padding-top:10px }
+.foot a:hover, .err a { color:var(--fg); text-decoration:underline }
+.empty { grid-column:1/-1; text-align:center; padding:48px 0 }
+
+dialog { background:var(--panel); color:var(--fg); border:1px solid var(--line); border-radius:14px; padding:22px; width:min(520px,calc(100vw - 32px)) }
+dialog::backdrop { background:#0008 }
+dialog h3 { margin:0 0 14px; font:600 20px Lora,serif }
+dialog label { display:block; font-size:12px; color:var(--mut); margin:12px 0 4px }
+dialog input, dialog textarea { width:100%; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:9px 11px }
+dialog textarea { height:84px; font:12px ui-monospace,monospace; resize:vertical }
+#msg { min-height:20px; font-size:13px; color:var(--mut); margin:10px 0 0 }
+#pv { margin:6px 0 0; padding:0; list-style:none; font:500 14px/1.35 Lora,serif }
+#pv li { padding:5px 0; border-bottom:1px solid var(--line) }
+.acts { display:flex; gap:8px; margin-top:16px; flex-wrap:wrap }
+.acts .sp { margin-left:auto }
+#hid { font-size:13px; color:var(--mut); margin-top:14px }
+#hid button { background:none; border:0; text-decoration:underline; padding:0 6px 0 4px }
+
+@media (max-width:640px) {
+  #upd { display:none }
+  .btn { padding:7px 10px }
+  #grid { gap:32px }
+}
+</style>
+</head>
+<body>
+<div class="top"><div class="wrap">
+  <div class="logo">Skim<i>.</i></div>
+  <span id="upd"></span>
+  <button class="btn" id="refresh">Refresh</button>
+  <button class="btn" id="theme"></button>
+  <button class="btn pri" id="addbtn">Add source</button>
+</div></div>
+
+<main class="wrap">
+  <div class="search">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="q" type="search" placeholder="Search headlines" aria-label="Search headlines" autocomplete="off">
+    <kbd aria-hidden="true">/</kbd>
+  </div>
+  <nav class="tabs" id="tabs" aria-label="Categories"></nav>
+  <div id="grid" aria-live="polite"><p class="empty">Loading…</p></div>
+</main>
+
+<dialog id="panel">
+  <h3>Add source</h3>
+  <label for="u">Site or feed URL</label>
+  <input id="u" type="text" inputmode="url" placeholder="example.com or https://example.com/feed.xml" autocomplete="off">
+  <label for="c">Category</label>
+  <input id="c" list="cats" placeholder="Pick one or type a new one" autocomplete="off"><datalist id="cats"></datalist>
+  <label for="n">Name (optional)</label>
+  <input id="n" type="text" autocomplete="off">
+  <p id="msg"></p>
+  <ul id="pv"></ul>
+  <div class="acts">
+    <button class="btn pri" id="add" disabled>Add</button>
+    <button class="btn" id="close">Close</button>
+    <button class="btn sp" id="export">Export</button>
+    <button class="btn" id="import">Import</button>
+  </div>
+  <label for="io">Export / import (JSON list of your added sources)</label>
+  <textarea id="io" spellcheck="false"></textarea>
+  <div id="hid"></div>
+</dialog>
+
+<script>
+const $ = s => document.querySelector(s);
+const h = (t, p = {}, ...k) => { const e = Object.assign(document.createElement(t), p); e.append(...k); return e; };
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('skim.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('skim.' + k, JSON.stringify(v)); } catch {} },
+};
+const debounce = (f, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => f(...a), ms); }; };
+async function getJSON(url) {
+  const r = await fetch(url);
+  const b = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(b.error || 'HTTP ' + r.status);
+  return b;
+}
+
+let cards = [], mine = store.get('mine', []), over = store.get('over', {}), cat = store.get('cat', 'All');
+const mode = {};
+const eff = c => { const o = over[c.url] || {}; return { ...c, name: o.name || c.source, category: o.category || c.category, hidden: !!o.hidden }; };
+const saveOver = () => store.set('over', over);
+const saveMine = () => store.set('mine', mine);
+
+const ago = iso => {
+  const m = (Date.now() - Date.parse(iso)) / 6e4;
+  return m < 60 ? Math.max(1, Math.round(m)) + 'm' : m < 1440 ? Math.floor(m / 60) + 'h' : Math.floor(m / 1440) + 'd';
+};
+
+async function load(fresh) {
+  $('#refresh').disabled = true;
+  const bust = fresh ? '&r=' + Math.floor(Date.now() / 6e4) : '';
+  const [d, m] = await Promise.allSettled([
+    getJSON('/api/feeds?' + bust),
+    mine.length ? getJSON('/api/feeds?extra=' + encodeURIComponent(JSON.stringify(mine)) + bust) : [],
+  ]);
+  cards = [...(d.value || []), ...(m.value || []).map(c => ({ ...c, mine: true }))];
+  if (d.status === 'rejected') $('#grid').replaceChildren(h('p', { className: 'empty' }, "Couldn't load feeds. ", h('a', { href: '#', onclick: e => { e.preventDefault(); load(true); } }, 'Retry')));
+  else { $('#upd').textContent = 'Updated ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); render(); }
+  $('#refresh').disabled = false;
+}
+
+function cardEl(c, q) {
+  const modes = Object.keys(c.modes || {});
+  const m = modes.includes(mode[c.url]) ? mode[c.url] : modes[0];
+  const el = h('section', { className: 'card' });
+  const menu = h('details', { className: 'menu' }, h('summary', { textContent: '···', ariaLabel: 'Source menu' }), h('div', {},
+    h('button', { textContent: 'Rename', onclick: () => edit(c, 'name', 'Rename source', c.name) }),
+    h('button', { textContent: 'Move category', onclick: () => edit(c, 'category', 'Move to category', c.category) }),
+    h('button', { textContent: c.mine ? 'Remove' : 'Hide', onclick: () => {
+      if (c.mine) { mine = mine.filter(x => x.url !== c.url); delete over[c.url]; saveMine(); cards = cards.filter(x => x !== c.raw); }
+      else over[c.url] = { ...over[c.url], hidden: true };
+      saveOver(); render();
+    } })));
+  el.append(h('header', {}, h('h2', { textContent: c.name }),
+    ...(modes.length > 1 ? modes.map(k => h('button', { className: 'mode', textContent: k, ariaPressed: k === m, onclick: () => { mode[c.url] = k; render(); } })) : []),
+    menu));
+  if (c.error) {
+    if (q) return null;
+    el.append(h('p', { className: 'err' }, "Couldn't load · ", h('a', { href: '#', onclick: e => { e.preventDefault(); load(true); } }, 'retry')));
+    return el;
+  }
+  const seen = new Set();
+  let items = (c.modes[m] || []).filter(i => /^https?:\/\//i.test(i.url) && !seen.has(i.url) && seen.add(i.url));
+  if (m === 'Latest') items.sort((a, b) => (Date.parse(b.publishedAt) || 0) - (Date.parse(a.publishedAt) || 0));
+  items = items.slice(0, 8);
+  if (q) items = items.filter(i => i.title.toLowerCase().includes(q));
+  if (!items.length) return q ? null : (el.append(h('p', { className: 'err', textContent: 'No items' })), el);
+  for (const i of items) {
+    const hrs = i.publishedAt ? (Date.now() - Date.parse(i.publishedAt)) / 36e5 : 6;
+    el.append(h('div', { className: 'row a' + (hrs < 3 ? 0 : hrs < 12 ? 1 : 2) },
+      h('span', { className: 't', textContent: i.publishedAt ? ago(i.publishedAt) : '' }),
+      h('a', { href: i.url, target: '_blank', rel: 'noopener noreferrer', textContent: i.title })));
+  }
+  let site = c.site; try { site = site || new URL(c.url).origin; } catch {}
+  el.append(h('div', { className: 'foot' }, h('a', { href: site, target: '_blank', rel: 'noopener noreferrer', textContent: 'Open ' + c.name })));
+  return el;
+}
+
+function edit(c, field, label, cur) {
+  const v = prompt(label, cur);
+  if (v == null) return;
+  over[c.url] = { ...over[c.url], [field]: v.trim() || undefined };
+  saveOver(); render();
+}
+
+function render() {
+  const q = $('#q').value.trim().toLowerCase();
+  const all = cards.map(c => ({ ...eff(c), raw: c })).filter(c => !c.hidden);
+  const cats = [...new Set(all.map(c => c.category))];
+  if (cat !== 'All' && !cats.includes(cat)) cat = 'All';
+  $('#tabs').replaceChildren(...['All', ...cats].map(k => h('button', {
+    textContent: k, ariaPressed: k === cat, onclick: () => { cat = k; store.set('cat', k); render(); },
+  })));
+  $('#cats').replaceChildren(...cats.map(k => h('option', { value: k })));
+  const els = all.filter(c => cat === 'All' || c.category === cat).map(c => cardEl(c, q)).filter(Boolean);
+  $('#grid').replaceChildren(...(els.length ? els : [h('p', { className: 'empty', textContent: q ? 'No headlines match.' : 'Nothing here.' })]));
+  const hid = all.length === cards.length ? [] : cards.map(c => ({ ...eff(c), raw: c })).filter(c => c.hidden);
+  $('#hid').replaceChildren(...(hid.length ? ['Hidden: ', ...hid.map(c => h('button', {
+    textContent: c.name + ' ↺', onclick: () => { over[c.url].hidden = false; saveOver(); render(); },
+  }))] : []));
+}
+
+// theme
+const themeBtn = $('#theme');
+const paintTheme = () => themeBtn.textContent = document.documentElement.dataset.theme === 'dark' ? 'Light' : 'Dark';
+themeBtn.onclick = () => {
+  const t = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = t; store.set('theme', t); paintTheme();
+};
+paintTheme();
+$('#refresh').onclick = () => load(true);
+$('#q').addEventListener('input', render);
+document.addEventListener('click', e => document.querySelectorAll('.menu[open]').forEach(d => d.contains(e.target) || d.removeAttribute('open')));
+
+// keyboard
+addEventListener('keydown', e => {
+  if (e.target.matches('input,textarea') || e.metaKey || e.ctrlKey || e.altKey || $('#panel').open) {
+    if (e.key === 'Escape' && e.target.id === 'q') e.target.blur();
+    return;
+  }
+  if (e.key === '/') { e.preventDefault(); $('#q').focus(); }
+  else if (e.key === 'j' || e.key === 'k') {
+    const links = [...document.querySelectorAll('.row a')];
+    const i = links.indexOf(document.activeElement);
+    const n = i < 0 ? 0 : Math.min(links.length - 1, Math.max(0, i + (e.key === 'j' ? 1 : -1)));
+    links[n]?.focus();
+  }
+});
+
+// add-source panel
+let tok = 0, found = null;
+const say = t => $('#msg').textContent = t;
+$('#addbtn').onclick = () => { $('#c').value ||= cat === 'All' ? '' : cat; $('#panel').showModal(); $('#u').focus(); };
+$('#close').onclick = () => $('#panel').close();
+$('#u').addEventListener('input', debounce(async () => {
+  const v = $('#u').value.trim(), t = ++tok;
+  found = null; $('#add').disabled = true; $('#pv').replaceChildren();
+  if (!v.includes('.')) return say('');
+  say('Looking for a feed…');
+  try {
+    const d = await getJSON('/api/discover?url=' + encodeURIComponent(/^https?:/i.test(v) ? v : 'https://' + v));
+    const [f] = await getJSON('/api/feeds?extra=' + encodeURIComponent(JSON.stringify([{ name: d.title || v, url: d.feed, category: 'x' }])));
+    if (t !== tok) return;
+    if (f.error) throw new Error(f.error);
+    found = { url: d.feed, name: d.title || new URL(d.feed).hostname };
+    $('#n').placeholder = found.name;
+    say('Feed found. First headlines:');
+    $('#pv').replaceChildren(...f.modes.Latest.slice(0, 3).map(i => h('li', { textContent: i.title })));
+    $('#add').disabled = false;
+  } catch (e) { if (t === tok) say(e.message); }
+}, 600));
+$('#add').onclick = () => {
+  const category = $('#c').value.trim() || (cat === 'All' ? 'Other' : cat);
+  if (cards.some(c => c.url === found.url)) return say('Already in your list.');
+  mine.push({ name: $('#n').value.trim() || found.name, url: found.url, category }); saveMine();
+  for (const id of ['u', 'n']) $('#' + id).value = '';
+  found = null; $('#add').disabled = true; $('#pv').replaceChildren(); say('');
+  $('#panel').close(); load();
+};
+$('#export').onclick = () => {
+  $('#io').value = JSON.stringify(mine, null, 2);
+  navigator.clipboard?.writeText($('#io').value).then(() => say('Copied. Paste into sources.json to make them permanent.'), () => {});
+};
+$('#import').onclick = () => {
+  try {
+    const list = JSON.parse($('#io').value);
+    if (!Array.isArray(list) || list.some(s => !s || typeof s.url !== 'string')) throw 0;
+    for (const s of list) if (!mine.some(m => m.url === s.url)) mine.push({ name: s.name || s.url, url: s.url, category: s.category || 'Other' });
+    saveMine(); say('Imported ' + list.length + ' sources.'); load();
+  } catch { say("That isn't a JSON list of sources."); }
+};
+
+load();
+</script>
+</body>
+</html>
