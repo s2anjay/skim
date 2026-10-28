@@ -58,6 +58,7 @@ button { cursor:pointer }
 .menu div button { display:block; width:100%; text-align:left; background:none; border:0; padding:8px 10px; border-radius:6px; font-size:13px }
 .menu div button:hover { background:var(--hl) }
 
+.list { max-height:540px; overflow-y:auto; overscroll-behavior:contain; scrollbar-width:thin; scrollbar-color:var(--line) transparent }
 .row { display:grid; grid-template-columns:52px 1fr; gap:0 8px; padding:9px 10px 9px 0; margin-left:0; border-bottom:1px solid var(--line); border-radius:8px }
 .row:last-of-type { border-bottom-color:transparent }
 .t { position:relative; padding-left:12px; font-size:13px; color:var(--mut); padding-top:3px }
@@ -194,12 +195,13 @@ function cardEl(c, q) {
   const seen = new Set();
   let items = (c.modes[m] || []).filter(i => /^https?:\/\//i.test(i.url) && !seen.has(i.url) && seen.add(i.url));
   if (m === 'Latest') items.sort((a, b) => (Date.parse(b.publishedAt) || 0) - (Date.parse(a.publishedAt) || 0));
-  items = items.slice(0, 8);
   if (q) items = items.filter(i => i.title.toLowerCase().includes(q));
   if (!items.length) return q ? null : (el.append(h('p', { className: 'err', textContent: 'No items' })), el);
+  const list = h('div', { className: 'list' });
+  el.append(list);
   for (const i of items) {
     const hrs = i.publishedAt ? (Date.now() - Date.parse(i.publishedAt)) / 36e5 : 6;
-    el.append(h('div', { className: 'row a' + (hrs < 3 ? 0 : hrs < 12 ? 1 : 2) },
+    list.append(h('div', { className: 'row a' + (hrs < 3 ? 0 : hrs < 12 ? 1 : 2) },
       h('span', { className: 't', textContent: i.publishedAt ? ago(i.publishedAt) : '' }),
       h('a', { href: i.url, target: '_blank', rel: 'noopener noreferrer', textContent: i.title })));
   }

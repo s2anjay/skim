@@ -61,7 +61,7 @@ const tag = (block, name) => {
 };
 
 // shortcut: regex parsing, fine for mainstream RSS/Atom; swap in a real XML parser if odd feeds show up
-function parseFeed(xml, limit = 15) {
+function parseFeed(xml, limit = 30) {
   const blocks = xml.match(/<(item|entry)[\s>][\s\S]*?<\/\1>/gi) || [];
   const items = [];
   for (const b of blocks) {
