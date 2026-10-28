@@ -293,7 +293,7 @@ function render() {
   const cats = [...new Set(all.map(c => c.category))];
   if (cat !== 'All' && !cats.includes(cat)) cat = 'All';
   $('#tabs').replaceChildren(...['All', ...cats].map(k => h('button', {
-    textContent: k, ariaPressed: k === cat, onclick: () => { cat = k; store.set('cat', k); render(); },
+    textContent: k, ariaPressed: k === cat, onclick: () => { cat = k; kw = ''; store.set('cat', k); render(); },
   })));
   $('#cats').replaceChildren(...cats.map(k => h('option', { value: k })));
   const shown = all.filter(c => cat === 'All' || c.category === cat);
