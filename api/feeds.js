@@ -14,7 +14,7 @@ const fetchRetry = url => safeFetch(url).catch(() => safeFetch(url));
 const str = v => (typeof v === 'string' ? v.trim().slice(0, 80) : '');
 
 async function load(s) {
-  const out = { source: s.name, category: s.category, url: s.url, site: s.site };
+  const out = { source: s.name, category: s.category, url: s.url, site: s.site, type: s.type };
   try {
     const urls = { Latest: s.url, ...s.modes };
     const entries = await Promise.all(Object.entries(urls).map(async ([label, url]) =>
@@ -34,7 +34,7 @@ module.exports = async (req, res) => {
   }
   if (!Array.isArray(sources) || sources.length > 40) return send(res, 400, { error: 'Send at most 40 sources' });
   const clean = sources.filter(s => s && typeof s.url === 'string').map(s => ({
-    name: str(s.name) || s.url, url: s.url, category: str(s.category) || 'Other', site: str(s.site) || undefined,
+    name: str(s.name) || s.url, url: s.url, category: str(s.category) || 'Other', site: str(s.site) || undefined, type: s.type === 'aggregator' ? 'aggregator' : undefined,
     modes: s.modes && typeof s.modes === 'object' ? s.modes : undefined,
   }));
   send(res, 200, await Promise.all(clean.map(load)));

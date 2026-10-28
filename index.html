@@ -47,6 +47,17 @@ button { cursor:pointer }
 .tabs button:hover { color:var(--fg) }
 .tabs button[aria-pressed=true] { color:var(--fg); border-color:var(--acc) }
 
+[hidden] { display:none !important }
+#view { display:flex; align-items:center; gap:12px; margin-bottom:14px }
+#view .sp { margin-left:auto }
+.seg { display:inline-flex; flex:none; border:1px solid var(--line); border-radius:8px; overflow:hidden }
+.seg button { background:none; border:0; padding:5px 12px; font-size:13px; color:var(--mut) }
+.seg button[aria-pressed=true] { background:var(--hl); color:var(--fg) }
+.pick { flex:none; background:var(--acc); color:var(--on-acc); border:0; border-radius:999px; padding:4px 11px; font-size:13px }
+#grid.flat { columns:auto; max-width:860px }
+.flat .row { grid-template-columns:52px 1fr }
+.src { display:block; margin-top:3px; padding:0; background:none; border:0; font-size:12px; color:var(--mut); text-align:left }
+.src:hover { color:var(--fg); text-decoration:underline }
 #kws { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:26px }
 #kws:empty { display:none }
 #kws span { font-size:12px; color:var(--mut); margin-right:4px }
@@ -115,6 +126,9 @@ dialog textarea { height:84px; font:12px ui-monospace,monospace; resize:vertical
   .search input { padding:12px 40px 12px 42px }
   .search kbd { display:none }
   .tabs { gap:20px; margin-bottom:14px }
+  #view { flex-wrap:wrap; gap:8px }
+  #view .sp { display:none }
+  .seg button { padding:5px 10px }
   #kws { flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; margin-bottom:18px }
   #kws > * { flex:none }
   .list { max-height:none; overflow:visible } /* page scrolls instead of nested boxes; use the count menu to show more */
@@ -144,6 +158,7 @@ dialog textarea { height:84px; font:12px ui-monospace,monospace; resize:vertical
     <kbd aria-hidden="true">/</kbd>
   </div>
   <nav class="tabs" id="tabs" aria-label="Categories"></nav>
+  <div id="view"></div>
   <div id="kws" aria-label="Trending keywords"></div>
   <div id="grid" aria-live="polite"><p class="empty">Loading…</p></div>
 </main>
@@ -195,9 +210,10 @@ const markRead = (row, url) => {
 const narrow = () => innerWidth < 640;
 const openSet = new Set();
 const known = new Set();
-let seeded = false, visible = [], kw = '';
+let seeded = false, visible = [], kw = '', srcPick = '';
+let view = store.get('view', 'cards'), kind = store.get('kind', 'all');
 let limit = store.get('limit', innerWidth < 640 ? 8 : 30);
-const eff = c => { const o = over[c.url] || {}; return { ...c, name: o.name || c.source, category: o.category || c.category, hidden: !!o.hidden }; };
+const eff = c => { const o = over[c.url] || {}; return { ...c, name: o.name || c.source, category: o.category || c.category, type: o.type || c.type, hidden: !!o.hidden }; };
 const saveOver = () => store.set('over', over);
 const saveMine = () => store.set('mine', mine);
 
@@ -247,6 +263,9 @@ function cardEl(c, q) {
   const menu = h('details', { className: 'menu' }, h('summary', { textContent: '···', ariaLabel: 'Source menu' }), h('div', {},
     h('button', { textContent: 'Rename', onclick: () => edit(c, 'name', 'Rename source', c.name) }),
     h('button', { textContent: 'Move category', onclick: () => edit(c, 'category', 'Move to category', c.category) }),
+    h('button', { textContent: c.type === 'aggregator' ? 'Mark as publisher' : 'Mark as aggregator', onclick: () => {
+      over[c.url] = { ...over[c.url], type: c.type === 'aggregator' ? 'publisher' : 'aggregator' }; saveOver(); render();
+    } }),
     h('button', { textContent: c.mine ? 'Remove' : 'Hide', onclick: () => {
       if (c.mine) { mine = mine.filter(x => x.url !== c.url); delete over[c.url]; saveMine(); cards = cards.filter(x => x !== c.raw); }
       else over[c.url] = { ...over[c.url], hidden: true };
@@ -280,6 +299,28 @@ function cardEl(c, q) {
   return el;
 }
 
+function listEl(cs, q) {
+  const seen = new Set(), items = [];
+  for (const c of cs) if (!c.error) for (const i of itemsOf(c)) if (!seen.has(i.url)) { seen.add(i.url); items.push({ ...i, src: c }); }
+  items.sort((a, b) => (Date.parse(b.publishedAt) || 0) - (Date.parse(a.publishedAt) || 0));
+  const box = h('div');
+  const failed = cs.filter(c => c.error).length;
+  if (failed && !q && !kw && !srcPick) box.append(h('p', { className: 'err' }, failed + " source" + (failed > 1 ? 's' : '') + " couldn't load · ", h('a', { href: '#', onclick: e => { e.preventDefault(); load(true); } }, 'retry')));
+  const rows = items.filter(i => (!srcPick || i.src.url === srcPick) && (!q || i.title.toLowerCase().includes(q)) && (!kw || words(i.title).has(kw)));
+  if (!rows.length) box.append(h('p', { className: 'empty', textContent: q || kw || srcPick ? 'No headlines match.' : 'Nothing here.' }));
+  for (const i of rows) {
+    const hrs = i.publishedAt ? (Date.now() - Date.parse(i.publishedAt)) / 36e5 : 6;
+    const name = (i.src.type === 'aggregator' ? 'via ' : '') + i.src.name;
+    box.append(h('div', { className: 'row a' + (hrs < 3 ? 0 : hrs < 12 ? 1 : 2) + (read.has(i.url) ? ' read' : '') },
+      h('span', { className: 't', textContent: i.publishedAt ? ago(i.publishedAt) : '' }),
+      h('div', {},
+        h('a', { href: i.url, target: '_blank', rel: 'noopener noreferrer', textContent: i.title,
+          onclick: e => markRead(e.currentTarget.closest('.row'), i.url), onauxclick: e => markRead(e.currentTarget.closest('.row'), i.url) }),
+        h('button', { className: 'src', textContent: name, title: 'Only show ' + i.src.name, onclick: () => { srcPick = i.src.url; render(); } }))));
+  }
+  return box;
+}
+
 function edit(c, field, label, cur) {
   const v = prompt(label, cur);
   if (v == null) return;
@@ -296,7 +337,8 @@ function render() {
     textContent: k, ariaPressed: k === cat, onclick: () => { cat = k; kw = ''; store.set('cat', k); render(); },
   })));
   $('#cats').replaceChildren(...cats.map(k => h('option', { value: k })));
-  const shown = all.filter(c => cat === 'All' || c.category === cat);
+  const shown = all.filter(c => (cat === 'All' || c.category === cat) && (kind === 'all' || (c.type === 'aggregator' ? 'aggregator' : 'publisher') === kind));
+  if (srcPick && !shown.some(c => c.url === srcPick)) srcPick = '';
   // desktop opens every card; phones open only the first one on load
   for (const c of all) if (!known.has(c.url)) { known.add(c.url); if (!narrow() || (!seeded && c === shown[0])) openSet.add(c.url); }
   seeded = true;
@@ -306,7 +348,18 @@ function render() {
   $('#kws').replaceChildren(...(top.length ? [h('span', { textContent: 'Trending' }), ...top.map(([w, k]) => h('button', {
     ariaPressed: w === kw, onclick: () => { kw = kw === w ? '' : w; render(); },
   }, w, h('small', { textContent: k })))] : []));
-  const els = shown.map(c => cardEl(c, q)).filter(Boolean);
+  const seg = (cls, opts, cur, set) => h('div', { className: 'seg ' + cls }, ...opts.map(([v, label]) => h('button', {
+    textContent: label, ariaPressed: v === cur, onclick: () => { set(v); render(); },
+  })));
+  const pickName = shown.find(c => c.url === srcPick)?.name;
+  $('#view').replaceChildren(
+    seg('', [['all', 'All sources'], ['aggregator', 'Aggregators'], ['publisher', 'Publishers']], kind, v => { kind = v; store.set('kind', v); }),
+    ...(pickName ? [h('button', { className: 'pick', textContent: pickName + ' ×', title: 'Show all sources', onclick: () => { srcPick = ''; render(); } })] : []),
+    h('span', { className: 'sp' }),
+    seg('', [['cards', 'Cards'], ['list', 'List']], view, v => { view = v; store.set('view', v); }));
+  $('#fold').hidden = view === 'list';
+  $('#grid').className = view === 'list' ? 'flat' : '';
+  const els = view === 'list' ? [listEl(shown, q)] : shown.map(c => cardEl(c, q)).filter(Boolean);
   $('#grid').replaceChildren(...(els.length ? els : [h('p', { className: 'empty', textContent: q || kw ? 'No headlines match.' : 'Nothing here.' })]));
   const hid = all.length === cards.length ? [] : cards.map(c => ({ ...eff(c), raw: c })).filter(c => c.hidden);
   $('#hid').replaceChildren(...(hid.length ? ['Hidden: ', ...hid.map(c => h('button', {

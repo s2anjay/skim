@@ -3,7 +3,8 @@
     "name": "Techmeme",
     "url": "https://www.techmeme.com/feed.xml",
     "category": "Tech",
-    "site": "https://www.techmeme.com"
+    "site": "https://www.techmeme.com",
+    "type": "aggregator"
   },
   {
     "name": "Hacker News",
@@ -15,7 +16,8 @@
       "Day": "https://hn.algolia.com/api/v1/search?tags=story&hitsPerPage=100&numericFilters=created_at_i%3E{ago:86400}",
       "Week": "https://hn.algolia.com/api/v1/search?tags=story&hitsPerPage=100&numericFilters=created_at_i%3E{ago:604800}",
       "Month": "https://hn.algolia.com/api/v1/search?tags=story&hitsPerPage=100&numericFilters=created_at_i%3E{ago:2592000}"
-    }
+    },
+    "type": "aggregator"
   },
   {
     "name": "Lobsters",
@@ -25,7 +27,8 @@
       "Day": "https://lobste.rs/top/1d.rss",
       "Week": "https://lobste.rs/top/1w.rss",
       "Month": "https://lobste.rs/top/1m.rss"
-    }
+    },
+    "type": "aggregator"
   },
   {
     "name": "Ars Technica",
@@ -161,7 +164,8 @@
   {
     "name": "Product Hunt",
     "url": "https://www.producthunt.com/feed",
-    "category": "Products"
+    "category": "Products",
+    "type": "aggregator"
   },
   {
     "name": "Engadget",
