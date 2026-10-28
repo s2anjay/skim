@@ -108,11 +108,10 @@ button { cursor:pointer }
 .row { display:grid; grid-template-columns:52px 1fr; gap:0 8px; padding:9px 10px 9px 0; margin-left:0; border-bottom:1px solid var(--line); border-radius:8px }
 .row:last-of-type { border-bottom-color:transparent }
 .t { position:relative; padding-left:12px; font-size:13px; color:var(--mut); padding-top:3px }
-.t::before { content:''; position:absolute; left:0; top:4px; height:16px; width:3px; border-radius:2px; background:var(--acc); transition:background-color .25s }
+.t::before { content:''; position:absolute; left:0; top:4px; height:16px; width:3px; border-radius:2px; background:#f97316; transition:background-color .25s }
 .row a { font:500 17px/1.3 Lora,serif }
 .a1 .t::before { opacity:.65 } .a2 .t::before { opacity:.3 }
 .row.read .t::before { background:var(--mut); opacity:.5 }
-.row.read a::after { content:''; display:inline-block; width:6px; height:6px; margin-left:8px; border-radius:50%; background:var(--acc); vertical-align:middle }
 .row:has(a:focus-visible) { background:var(--hl); box-shadow:-8px 0 0 var(--hl); border-color:transparent }
 .row a:focus-visible { outline:0; color:var(--acc) }
 .foot, .err, .empty { font-size:13px; color:var(--mut); padding-top:10px }
