@@ -50,6 +50,10 @@ button { cursor:pointer }
 #grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:40px 42px; padding-bottom:64px; align-items:start }
 .card { border-top:2px solid var(--fg); min-width:0 }
 .card header { display:flex; align-items:center; gap:14px; padding:12px 0 10px }
+.card header { cursor:pointer }
+.card header::before { content:'▾'; color:var(--mut); font-size:12px; margin-right:-4px }
+.card.closed header::before { content:'▸' }
+.card.closed > :not(header) { display:none }
 .card h2 { margin:0 auto 0 0; font-size:14px; font-weight:600; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
 .modes { display:flex; flex-wrap:wrap; gap:4px 14px; padding:0 0 8px }
 .mode { background:none; border:0; padding:0; font-size:12px; color:var(--mut); border-bottom:1px solid transparent }
@@ -103,10 +107,7 @@ dialog textarea { height:84px; font:12px ui-monospace,monospace; resize:vertical
   .tabs { gap:20px; margin-bottom:20px }
   .list { max-height:none; overflow:visible } /* page scrolls instead of nested boxes; use the count menu to show more */
   .row a { font-size:16px }
-  .card header { cursor:pointer; padding:14px 0 12px }
-  .card header::before { content:'▾'; color:var(--mut); font-size:12px }
-  .card.closed header::before { content:'▸' }
-  .card.closed > :not(header) { display:none }
+  .card header { padding:14px 0 12px }
   .card.closed header { padding-bottom:14px }
   #grid { gap:0 }
   .card { border-bottom:1px solid var(--line); padding-bottom:6px }
@@ -174,6 +175,7 @@ let cards = [], mine = store.get('mine', []), over = store.get('over', {}), cat 
 const mode = {};
 const narrow = () => innerWidth < 640;
 const openSet = new Set();
+const known = new Set();
 let seeded = false;
 let limit = store.get('limit', innerWidth < 640 ? 8 : 30);
 const eff = c => { const o = over[c.url] || {}; return { ...c, name: o.name || c.source, category: o.category || c.category, hidden: !!o.hidden }; };
@@ -212,10 +214,8 @@ function cardEl(c, q) {
     } })));
   const hd = h('header', {}, h('h2', { textContent: c.name }), menu);
   el.append(hd);
-  if (narrow()) {
-    el.classList.toggle('closed', !q && !openSet.has(c.url));
-    hd.onclick = e => { if (e.target.closest('.menu')) return; openSet.has(c.url) ? openSet.delete(c.url) : openSet.add(c.url); render(); };
-  }
+  el.classList.toggle('closed', !q && !openSet.has(c.url));
+  hd.onclick = e => { if (e.target.closest('.menu')) return; openSet.has(c.url) ? openSet.delete(c.url) : openSet.add(c.url); render(); };
   if (modes.length > 1) el.append(h('div', { className: 'modes' }, ...modes.map(k => h('button', { className: 'mode', textContent: k, ariaPressed: k === m, onclick: () => { mode[c.url] = k; render(); } }))));
   if (c.error) {
     if (q) return null;
@@ -258,7 +258,9 @@ function render() {
   })));
   $('#cats').replaceChildren(...cats.map(k => h('option', { value: k })));
   const shown = all.filter(c => cat === 'All' || c.category === cat);
-  if (!seeded && shown.length) { seeded = true; openSet.add(shown[0].url); }
+  // desktop opens every card; phones open only the first one on load
+  for (const c of all) if (!known.has(c.url)) { known.add(c.url); if (!narrow() || (!seeded && c === shown[0])) openSet.add(c.url); }
+  seeded = true;
   const els = shown.map(c => cardEl(c, q)).filter(Boolean);
   $('#grid').replaceChildren(...(els.length ? els : [h('p', { className: 'empty', textContent: q ? 'No headlines match.' : 'Nothing here.' })]));
   const hid = all.length === cards.length ? [] : cards.map(c => ({ ...eff(c), raw: c })).filter(c => c.hidden);

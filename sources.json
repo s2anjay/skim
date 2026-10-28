@@ -28,6 +28,24 @@
     }
   },
   {
+    "name": "Ars Technica",
+    "url": "https://feeds.arstechnica.com/arstechnica/index",
+    "category": "Tech",
+    "site": "https://arstechnica.com"
+  },
+  {
+    "name": "TechCrunch",
+    "url": "https://techcrunch.com/feed/",
+    "category": "Tech",
+    "site": "https://techcrunch.com"
+  },
+  {
+    "name": "Wired",
+    "url": "https://www.wired.com/feed/rss",
+    "category": "Tech",
+    "site": "https://www.wired.com"
+  },
+  {
     "name": "NPR",
     "url": "https://feeds.npr.org/1001/rss.xml",
     "category": "World",
@@ -38,6 +56,24 @@
     "url": "https://feeds.bbci.co.uk/news/world/rss.xml",
     "category": "World",
     "site": "https://www.bbc.com/news/world"
+  },
+  {
+    "name": "Al Jazeera",
+    "url": "https://www.aljazeera.com/xml/rss/all.xml",
+    "category": "World",
+    "site": "https://www.aljazeera.com"
+  },
+  {
+    "name": "The Guardian World",
+    "url": "https://www.theguardian.com/world/rss",
+    "category": "World",
+    "site": "https://www.theguardian.com/world"
+  },
+  {
+    "name": "NYT World",
+    "url": "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
+    "category": "World",
+    "site": "https://www.nytimes.com/section/world"
   },
   {
     "name": "CNBC",
@@ -52,6 +88,12 @@
     "site": "https://www.marketwatch.com"
   },
   {
+    "name": "Bloomberg Markets",
+    "url": "https://feeds.bloomberg.com/markets/news.rss",
+    "category": "Finance",
+    "site": "https://www.bloomberg.com/markets"
+  },
+  {
     "name": "The Verge",
     "url": "https://www.theverge.com/rss/index.xml",
     "category": "Products"
@@ -60,6 +102,18 @@
     "name": "Product Hunt",
     "url": "https://www.producthunt.com/feed",
     "category": "Products"
+  },
+  {
+    "name": "Engadget",
+    "url": "https://www.engadget.com/rss.xml",
+    "category": "Products",
+    "site": "https://www.engadget.com"
+  },
+  {
+    "name": "9to5Mac",
+    "url": "https://9to5mac.com/feed/",
+    "category": "Products",
+    "site": "https://9to5mac.com"
   },
   {
     "name": "Simon Willison",
@@ -78,5 +132,23 @@
     "url": "https://huggingface.co/blog/feed.xml",
     "category": "Claude and AI",
     "site": "https://huggingface.co/blog"
+  },
+  {
+    "name": "OpenAI",
+    "url": "https://openai.com/news/rss.xml",
+    "category": "Claude and AI",
+    "site": "https://openai.com/news"
+  },
+  {
+    "name": "Google AI",
+    "url": "https://blog.google/technology/ai/rss/",
+    "category": "Claude and AI",
+    "site": "https://blog.google/technology/ai"
+  },
+  {
+    "name": "Import AI",
+    "url": "https://importai.substack.com/feed",
+    "category": "Claude and AI",
+    "site": "https://importai.substack.com"
   }
 ]
