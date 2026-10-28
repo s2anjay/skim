@@ -8,6 +8,9 @@ const fromJSON = text => JSON.parse(text).hits.map(h => ({
 })).filter(i => i.title);
 const parse = text => (text.trimStart()[0] === '{' ? fromJSON(text) : parseFeed(text));
 
+// one retry: a burst of parallel fetches occasionally times out or drops a connection
+const fetchRetry = url => safeFetch(url).catch(() => safeFetch(url));
+
 const str = v => (typeof v === 'string' ? v.trim().slice(0, 80) : '');
 
 async function load(s) {
@@ -15,7 +18,7 @@ async function load(s) {
   try {
     const urls = { Latest: s.url, ...s.modes };
     const entries = await Promise.all(Object.entries(urls).map(async ([label, url]) =>
-      [label, parse((await safeFetch(when(url))).text)]));
+      [label, parse((await fetchRetry(when(url))).text)]));
     out.modes = Object.fromEntries(entries);
   } catch (e) {
     out.error = e.message;
