@@ -148,6 +148,29 @@ dialog[open]::backdrop { animation:fade .22s }
 .btn:active, #view button:active, #kws button:active { transform:scale(.96) }
 body, .top, .btn, .search input, .search kbd, .tabs button, .seg button, #kws button, #srcs .sq, .mini, .hd, .pick, .mode, .menu div button, .row, dialog, dialog input, dialog textarea { transition:background-color .25s, color .25s, border-color .25s, box-shadow .25s, opacity .25s, transform .15s }
 .card { transition:margin-bottom .3s ease, border-color .25s }
+/* extra motion: transform/opacity only, so it stays on the compositor */
+@keyframes drop { from { opacity:0; transform:translateY(-10px) } }
+@keyframes pulse { 50% { opacity:.25 } }
+@keyframes tick { 40% { transform:scaleY(1.9) } }
+@keyframes pop2 { from { opacity:0; transform:scale(.85) } }
+.top { animation:drop .5s cubic-bezier(.2,.7,.2,1) both }
+.search, .tabs, #view, #kws { animation:in .55s cubic-bezier(.2,.7,.2,1) both }
+.search { animation-delay:.06s } .tabs { animation-delay:.12s } #view { animation-delay:.18s } #kws { animation-delay:.24s }
+.logo { transition:transform .3s cubic-bezier(.3,1.6,.5,1) } .logo:hover { transform:rotate(-3deg) scale(1.06) }
+.btn, #view button, #kws button { transition-property:background-color, color, border-color, box-shadow, opacity, transform }
+.btn:hover, #kws button:hover { transform:translateY(-1px) }
+.tabs button { position:relative; border-bottom-color:transparent !important }
+.tabs button::after { content:''; position:absolute; left:0; right:0; bottom:-1px; height:2px; background:var(--acc); transform:scaleX(0); transition:transform .3s cubic-bezier(.2,.7,.2,1) }
+.tabs button[aria-pressed=true]::after { transform:scaleX(1) }
+#srcs .sq { transition-property:background-color, color, border-color, box-shadow, opacity, transform }
+#srcs .sq:hover { transform:translateY(-2px) } #srcs .sq:active { transform:scale(.92) }
+.row a { background:linear-gradient(currentColor,currentColor) 0 100%/0 1px no-repeat; transition:background-size .35s cubic-bezier(.2,.7,.2,1), color .25s }
+.row:hover a { background-size:100% 1px }
+.t::before { transform-origin:center; transition:background-color .25s, opacity .25s, transform .25s cubic-bezier(.3,1.6,.5,1) }
+.row:hover .t::before { transform:scaleY(1.3) }
+.row.read.just .t::before { animation:tick .45s ease-out }
+.src { transition:color .2s, transform .2s } .src:hover { color:var(--fg); transform:translateX(2px) }
+#grid.loading { animation:pulse 1.1s ease-in-out infinite }
 @media (prefers-reduced-motion:reduce) { *, ::before, ::after { animation:none !important; transition:none !important } }
 
 @media (max-width:640px) {
@@ -241,7 +264,7 @@ const mode = {};
 // links opened this browser session get a dot; sessionStorage keeps it across a refresh
 const read = new Set((() => { try { return JSON.parse(sessionStorage.getItem('skim.read') || '[]'); } catch { return []; } })());
 const markRead = (row, url) => {
-  read.add(url); row.classList.add('read');
+  read.add(url); row.classList.add('read', 'just');
   try { sessionStorage.setItem('skim.read', JSON.stringify([...read])); } catch {}
 };
 const narrow = () => innerWidth < 640;
@@ -437,7 +460,7 @@ function render(enter) {
     ...(pickName ? [h('button', { className: 'pick', textContent: pickName + ' ×', title: 'Show all sources', onclick: () => { srcPick = ''; render(); } })] : []),
     h('span', { className: 'sp' }),
     ...(view === 'list' ? [seg('', [[0, 'Newest'], [7, 'Random week'], [30, 'Random month']], period, v => { seed = Math.random(); period = v; store.set('period', v); }),
-      ...(period ? [h('button', { className: 'mini', textContent: 'Shuffle', onclick: () => { seed = Math.random(); render(); } })] : [])] : []),
+      ...(period ? [h('button', { className: 'mini', textContent: 'Shuffle', onclick: () => { seed = Math.random(); render(true); } })] : [])] : []),
     seg('', [['list', 'List'], ['cards', 'Cards']], view, v => { view = v; store.set('view', v); }));
   $('#fold').hidden = view === 'list';
   $('#grid').className = (view === 'list' ? 'flat' : '') + (enter ? ' enter' : '');
