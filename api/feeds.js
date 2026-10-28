@@ -1,6 +1,13 @@
 const { safeFetch, parseFeed, send } = require('./_lib');
 const defaults = require('../sources.json');
 
+// {ago:N} in a URL becomes the unix time N seconds ago, for "top this week" style queries
+const when = u => u.replace(/\{ago:(\d+)\}/g, (_, n) => Math.floor(Date.now() / 1000) - n);
+const fromJSON = text => JSON.parse(text).hits.map(h => ({
+  title: h.title, url: h.url || 'https://news.ycombinator.com/item?id=' + h.objectID, publishedAt: h.created_at,
+})).filter(i => i.title);
+const parse = text => (text.trimStart()[0] === '{' ? fromJSON(text) : parseFeed(text));
+
 const str = v => (typeof v === 'string' ? v.trim().slice(0, 80) : '');
 
 async function load(s) {
@@ -8,7 +15,7 @@ async function load(s) {
   try {
     const urls = { Latest: s.url, ...s.modes };
     const entries = await Promise.all(Object.entries(urls).map(async ([label, url]) =>
-      [label, parseFeed((await safeFetch(url)).text)]));
+      [label, parse((await safeFetch(when(url))).text)]));
     out.modes = Object.fromEntries(entries);
   } catch (e) {
     out.error = e.message;
