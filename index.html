@@ -365,8 +365,7 @@ function bestOf(cs, days) {
 }
 
 function listEl(cs, q) {
-  const seen = new Set(), pts = new Map(); // HN points by url, from any mode, so Newest shows them too
-  for (const c of cs) if (!c.error) for (const l of Object.values(c.modes || {})) for (const i of l) if (i.points) pts.set(i.url, Math.max(pts.get(i.url) || 0, i.points));
+  const seen = new Set();
   let items = [];
   if (period) items = bestOf(cs, period);
   else {
@@ -380,7 +379,7 @@ function listEl(cs, q) {
   if (!rows.length) box.append(h('p', { className: 'empty', textContent: q || kw || srcPick ? 'No headlines match.' : 'Nothing here.' }));
   for (const i of rows) {
     const hrs = i.publishedAt ? (Date.now() - Date.parse(i.publishedAt)) / 36e5 : 6;
-    const name = (i.src.type === 'aggregator' ? 'via ' : '') + i.src.name + (period ? ` · ${i.score} source${i.score > 1 ? 's' : ''}` : '') + (pts.get(i.url) ? ` · ${pts.get(i.url)} pts` : '');
+    const name = (i.src.type === 'aggregator' ? 'via ' : '') + i.src.name + (period ? ` · ${i.score} source${i.score > 1 ? 's' : ''}${i.points ? ` · ${i.points} pts` : ''}` : '');
     box.append(h('div', { className: 'row a' + (hrs < 3 ? 0 : hrs < 12 ? 1 : 2) + (read.has(i.url) ? ' read' : '') },
       h('span', { className: 't', textContent: i.publishedAt ? ago(i.publishedAt) : '' }),
       h('div', {},
