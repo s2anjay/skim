@@ -58,6 +58,11 @@ button { cursor:pointer }
 .flat .row { grid-template-columns:52px 1fr }
 .src { display:block; margin-top:3px; padding:0; background:none; border:0; font-size:12px; color:var(--mut); text-align:left }
 .src:hover { color:var(--fg); text-decoration:underline }
+#view .tog { display:inline-flex; align-items:center; gap:7px; flex:none; background:none; border:1px solid var(--line); border-radius:999px; padding:4px 12px 4px 10px; font-size:13px; color:var(--mut) }
+#view .tog::before { content:''; width:7px; height:7px; border-radius:50%; border:1.5px solid currentColor; transition:background-color .2s, border-color .2s }
+#view .tog:hover { border-color:var(--mut) }
+#view .tog[aria-pressed=true] { color:var(--fg); border-color:var(--acc) }
+#view .tog[aria-pressed=true]::before { background:var(--acc); border-color:var(--acc) }
 #kws { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:26px }
 #kws:empty { display:none }
 #kws span { font-size:12px; color:var(--mut); margin-right:4px }
@@ -71,9 +76,12 @@ button { cursor:pointer }
 .card { border-top:2px solid var(--fg); min-width:0; break-inside:avoid; margin-bottom:40px }
 .card header { display:flex; align-items:center; gap:14px; padding:12px 0 10px }
 .card header { cursor:pointer }
-.card header::before { content:'▾'; color:var(--mut); font-size:12px; margin-right:-4px }
-.card.closed header::before { content:'▸' }
-.card.closed > :not(header) { display:none }
+.card header::before { content:'▾'; display:inline-block; color:var(--mut); font-size:12px; margin-right:-4px; transition:transform .25s ease }
+.card.closed header::before { transform:rotate(-90deg) }
+.body { display:grid; grid-template-rows:1fr; transition:grid-template-rows .3s ease }
+.inner { min-height:0; overflow:hidden; transition:visibility 0s }
+.card.closed .body { grid-template-rows:0fr }
+.card.closed .inner { visibility:hidden; transition:visibility 0s .3s }
 .card.closed { margin-bottom:12px }
 .card h2 { margin:0 auto 0 0; font-size:14px; font-weight:600; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
 .modes { display:flex; flex-wrap:wrap; gap:4px 14px; padding:0 0 8px }
@@ -113,6 +121,24 @@ dialog textarea { height:84px; font:12px ui-monospace,monospace; resize:vertical
 .acts .sp { margin-left:auto }
 #hid { font-size:13px; color:var(--mut); margin-top:14px }
 #hid button { background:none; border:0; text-decoration:underline; padding:0 6px 0 4px }
+
+/* motion */
+@keyframes in { from { opacity:0; transform:translateY(8px) } }
+@keyframes pop { from { opacity:0; transform:translateY(-4px) scale(.97) } }
+@keyframes fade { from { opacity:0 } }
+.enter .card, .flat.enter .row:nth-child(-n+40), .enter .empty { animation:in .4s cubic-bezier(.2,.7,.2,1) both; animation-delay:calc(min(var(--i,14),14) * 28ms) }
+.menu[open] div { animation:pop .15s ease-out }
+dialog[open] { animation:pop .22s cubic-bezier(.2,.7,.2,1) }
+dialog[open]::backdrop { animation:fade .22s }
+#grid { transition:opacity .25s }
+#grid.loading { opacity:.45; pointer-events:none }
+.top.scrolled { border-bottom-color:var(--line) }
+.search input:focus { outline:0; border-color:var(--acc); box-shadow:0 0 0 3px color-mix(in srgb, var(--acc) 22%, transparent) }
+.row:hover { background:var(--hl) }
+.btn:active, #view button:active, #kws button:active { transform:scale(.96) }
+body, .top, .btn, .search input, .search kbd, .tabs button, .seg button, #kws button, #view .tog, .pick, .mode, .menu div button, .row, dialog, dialog input, dialog textarea { transition:background-color .25s, color .25s, border-color .25s, box-shadow .25s, opacity .25s, transform .15s }
+.card { transition:margin-bottom .3s ease, border-color .25s }
+@media (prefers-reduced-motion:reduce) { *, ::before, ::after { animation:none !important; transition:none !important } }
 
 @media (max-width:640px) {
   #upd { display:none }
@@ -210,8 +236,11 @@ const markRead = (row, url) => {
 const narrow = () => innerWidth < 640;
 const openSet = new Set();
 const known = new Set();
+const paintFold = () => $('#fold').textContent = visible.some(u => openSet.has(u)) ? 'Fold all' : 'Unfold all';
 let seeded = false, visible = [], kw = '', srcPick = '';
-let view = store.get('view', 'list'), kind = store.get('kind', 'all');
+let view = store.get('view', 'list'), enterT;
+const off = new Set(store.get('off', [])); // aggregators switched off
+let pubOff = store.get('pubOff', false);
 let limit = store.get('limit', innerWidth < 640 ? 8 : 30);
 const eff = c => { const o = over[c.url] || {}; return { ...c, name: o.name || c.source, category: o.category || c.category, type: o.type || c.type, hidden: !!o.hidden }; };
 const saveOver = () => store.set('over', over);
@@ -224,6 +253,7 @@ const ago = iso => {
 
 async function load(fresh) {
   $('#refresh').disabled = true;
+  $('#grid').classList.add('loading');
   const bust = fresh ? '&r=' + Math.floor(Date.now() / 6e4) : '';
   const [d, m] = await Promise.allSettled([
     getJSON('/api/feeds?' + bust),
@@ -231,7 +261,8 @@ async function load(fresh) {
   ]);
   cards = [...(d.value || []), ...(m.value || []).map(c => ({ ...c, mine: true }))];
   if (d.status === 'rejected') $('#grid').replaceChildren(h('p', { className: 'empty' }, "Couldn't load feeds. ", h('a', { href: '#', onclick: e => { e.preventDefault(); load(true); } }, 'Retry')));
-  else { $('#upd').textContent = 'Updated ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); render(); }
+  else { $('#upd').textContent = 'Updated ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); render(true); }
+  $('#grid').classList.remove('loading');
   $('#refresh').disabled = false;
 }
 
@@ -273,20 +304,29 @@ function cardEl(c, q) {
     } })));
   const hd = h('header', {}, h('h2', { textContent: c.name }), menu);
   el.append(hd);
+  el.dataset.url = c.url;
+  const inner = h('div', { className: 'inner' });
+  el.append(h('div', { className: 'body' }, inner));
   el.classList.toggle('closed', !q && !openSet.has(c.url));
-  hd.onclick = e => { if (e.target.closest('.menu')) return; openSet.has(c.url) ? openSet.delete(c.url) : openSet.add(c.url); render(); };
-  if (modes.length > 1) el.append(h('div', { className: 'modes' }, ...modes.map(k => h('button', { className: 'mode', textContent: k, ariaPressed: k === m, onclick: () => { mode[c.url] = k; render(); } }))));
+  hd.onclick = e => {
+    if (e.target.closest('.menu')) return;
+    const open = openSet.has(c.url);
+    open ? openSet.delete(c.url) : openSet.add(c.url);
+    el.classList.toggle('closed', open); // no re-render, so the height can animate
+    paintFold();
+  };
+  if (modes.length > 1) inner.append(h('div', { className: 'modes' }, ...modes.map(k => h('button', { className: 'mode', textContent: k, ariaPressed: k === m, onclick: () => { mode[c.url] = k; render(); } }))));
   if (c.error) {
     if (q || kw) return null;
-    el.append(h('p', { className: 'err' }, "Couldn't load · ", h('a', { href: '#', onclick: e => { e.preventDefault(); load(true); } }, 'retry')));
+    inner.append(h('p', { className: 'err' }, "Couldn't load · ", h('a', { href: '#', onclick: e => { e.preventDefault(); load(true); } }, 'retry')));
     return el;
   }
   let items = itemsOf(c);
   if (q) items = items.filter(i => i.title.toLowerCase().includes(q));
   if (kw) items = items.filter(i => words(i.title).has(kw));
-  if (!items.length) return q || kw ? null : (el.append(h('p', { className: 'err', textContent: 'No items' })), el);
+  if (!items.length) return q || kw ? null : (inner.append(h('p', { className: 'err', textContent: 'No items' })), el);
   const list = h('div', { className: 'list' });
-  el.append(list);
+  inner.append(list);
   for (const i of items) {
     const hrs = i.publishedAt ? (Date.now() - Date.parse(i.publishedAt)) / 36e5 : 6;
     list.append(h('div', { className: 'row a' + (hrs < 3 ? 0 : hrs < 12 ? 1 : 2) + (read.has(i.url) ? ' read' : '') },
@@ -295,7 +335,7 @@ function cardEl(c, q) {
         onclick: e => markRead(e.currentTarget.parentNode, i.url), onauxclick: e => markRead(e.currentTarget.parentNode, i.url) })));
   }
   let site = c.site; try { site = site || new URL(c.url).origin; } catch {}
-  el.append(h('div', { className: 'foot' }, h('a', { href: site, target: '_blank', rel: 'noopener noreferrer', textContent: 'Open ' + c.name })));
+  inner.append(h('div', { className: 'foot' }, h('a', { href: site, target: '_blank', rel: 'noopener noreferrer', textContent: 'Open ' + c.name })));
   return el;
 }
 
@@ -318,6 +358,7 @@ function listEl(cs, q) {
           onclick: e => markRead(e.currentTarget.closest('.row'), i.url), onauxclick: e => markRead(e.currentTarget.closest('.row'), i.url) }),
         h('button', { className: 'src', textContent: name, title: 'Only show ' + i.src.name, onclick: () => { srcPick = i.src.url; render(); } }))));
   }
+  [...box.querySelectorAll('.row')].slice(0, 14).forEach((r, n) => r.style.setProperty('--i', n));
   return box;
 }
 
@@ -328,38 +369,49 @@ function edit(c, field, label, cur) {
   saveOver(); render();
 }
 
-function render() {
+function render(enter) {
   const q = $('#q').value.trim().toLowerCase();
   const all = cards.map(c => ({ ...eff(c), raw: c })).filter(c => !c.hidden);
   const cats = [...new Set(all.map(c => c.category))];
   if (cat !== 'All' && !cats.includes(cat)) cat = 'All';
   $('#tabs').replaceChildren(...['All', ...cats].map(k => h('button', {
-    textContent: k, ariaPressed: k === cat, onclick: () => { cat = k; kw = ''; store.set('cat', k); render(); },
+    textContent: k, ariaPressed: k === cat, onclick: () => { cat = k; kw = ''; store.set('cat', k); render(true); },
   })));
   $('#cats').replaceChildren(...cats.map(k => h('option', { value: k })));
-  const shown = all.filter(c => (cat === 'All' || c.category === cat) && (kind === 'all' || (c.type === 'aggregator' ? 'aggregator' : 'publisher') === kind));
+  const inCat = all.filter(c => cat === 'All' || c.category === cat);
+  const shown = inCat.filter(c => c.type === 'aggregator' ? !off.has(c.url) : !pubOff);
   if (srcPick && !shown.some(c => c.url === srcPick)) srcPick = '';
   // desktop opens every card; phones open only the first one on load
   for (const c of all) if (!known.has(c.url)) { known.add(c.url); if (!narrow() || (!seeded && c === shown[0])) openSet.add(c.url); }
   seeded = true;
   visible = shown.map(c => c.url);
-  $('#fold').textContent = visible.some(u => openSet.has(u)) ? 'Fold all' : 'Unfold all';
+  paintFold();
   const top = keywords(shown);
   $('#kws').replaceChildren(...(top.length ? [h('span', { textContent: 'Trending' }), ...top.map(([w, k]) => h('button', {
     ariaPressed: w === kw, onclick: () => { kw = kw === w ? '' : w; render(); },
   }, w, h('small', { textContent: k })))] : []));
   const seg = (cls, opts, cur, set) => h('div', { className: 'seg ' + cls }, ...opts.map(([v, label]) => h('button', {
-    textContent: label, ariaPressed: v === cur, onclick: () => { set(v); render(); },
+    textContent: label, ariaPressed: v === cur, onclick: () => { set(v); render(true); },
   })));
   const pickName = shown.find(c => c.url === srcPick)?.name;
   $('#view').replaceChildren(
-    seg('', [['all', 'All sources'], ['aggregator', 'Aggregators'], ['publisher', 'Publishers']], kind, v => { kind = v; store.set('kind', v); }),
+    ...inCat.filter(c => c.type === 'aggregator').map(c => h('button', {
+      className: 'tog', textContent: c.name, ariaPressed: !off.has(c.url), title: 'Show or hide ' + c.name,
+      onclick: () => { off.has(c.url) ? off.delete(c.url) : off.add(c.url); store.set('off', [...off]); render(true); },
+    })),
+    ...(inCat.some(c => c.type !== 'aggregator') ? [h('button', {
+      className: 'tog', textContent: 'Publishers', ariaPressed: !pubOff, title: 'Show or hide news publishers',
+      onclick: () => { pubOff = !pubOff; store.set('pubOff', pubOff); render(true); },
+    })] : []),
     ...(pickName ? [h('button', { className: 'pick', textContent: pickName + ' ×', title: 'Show all sources', onclick: () => { srcPick = ''; render(); } })] : []),
     h('span', { className: 'sp' }),
     seg('', [['cards', 'Cards'], ['list', 'List']], view, v => { view = v; store.set('view', v); }));
   $('#fold').hidden = view === 'list';
-  $('#grid').className = view === 'list' ? 'flat' : '';
+  $('#grid').className = (view === 'list' ? 'flat' : '') + (enter ? ' enter' : '');
+  clearTimeout(enterT);
+  if (enter) enterT = setTimeout(() => $('#grid').classList.remove('enter'), 1000);
   const els = view === 'list' ? [listEl(shown, q)] : shown.map(c => cardEl(c, q)).filter(Boolean);
+  if (view !== 'list') els.forEach((el, i) => el.style.setProperty('--i', i));
   $('#grid').replaceChildren(...(els.length ? els : [h('p', { className: 'empty', textContent: q || kw ? 'No headlines match.' : 'Nothing here.' })]));
   const hid = all.length === cards.length ? [] : cards.map(c => ({ ...eff(c), raw: c })).filter(c => c.hidden);
   $('#hid').replaceChildren(...(hid.length ? ['Hidden: ', ...hid.map(c => h('button', {
@@ -379,12 +431,15 @@ $('#refresh').onclick = () => load(true);
 $('#fold').onclick = () => {
   const anyOpen = visible.some(u => openSet.has(u));
   visible.forEach(u => anyOpen ? openSet.delete(u) : openSet.add(u));
-  render();
+  document.querySelectorAll('.card').forEach(el => el.classList.toggle('closed', anyOpen));
+  paintFold();
 };
 $('#limit').value = limit;
 $('#limit').onchange = e => { limit = +e.target.value; store.set('limit', limit); render(); };
-$('#q').addEventListener('input', render);
+$('#q').addEventListener('input', () => render());
 document.addEventListener('click', e => document.querySelectorAll('.menu[open]').forEach(d => d.contains(e.target) || d.removeAttribute('open')));
+
+addEventListener('scroll', () => $('.top').classList.toggle('scrolled', scrollY > 4), { passive: true });
 
 // keyboard
 addEventListener('keydown', e => {
@@ -394,7 +449,7 @@ addEventListener('keydown', e => {
   }
   if (e.key === '/') { e.preventDefault(); $('#q').focus(); }
   else if (e.key === 'j' || e.key === 'k') {
-    const links = [...document.querySelectorAll('.row a')];
+    const links = [...document.querySelectorAll('.flat .row a, .card:not(.closed) .row a')];
     const i = links.indexOf(document.activeElement);
     const n = i < 0 ? 0 : Math.min(links.length - 1, Math.max(0, i + (e.key === 'j' ? 1 : -1)));
     links[n]?.focus();
