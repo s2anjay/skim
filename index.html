@@ -395,11 +395,11 @@ function render(enter) {
   })));
   const pickName = shown.find(c => c.url === srcPick)?.name;
   $('#view').replaceChildren(
-    ...inCat.filter(c => c.type === 'aggregator').map(c => h('button', {
+    ...all.filter(c => c.type === 'aggregator').map(c => h('button', {
       className: 'tog', textContent: c.name, ariaPressed: !off.has(c.url), title: 'Show or hide ' + c.name,
       onclick: () => { off.has(c.url) ? off.delete(c.url) : off.add(c.url); store.set('off', [...off]); render(true); },
     })),
-    ...(inCat.some(c => c.type !== 'aggregator') ? [h('button', {
+    ...(all.some(c => c.type !== 'aggregator') ? [h('button', {
       className: 'tog', textContent: 'Publishers', ariaPressed: !pubOff, title: 'Show or hide news publishers',
       onclick: () => { pubOff = !pubOff; store.set('pubOff', pubOff); render(true); },
     })] : []),
