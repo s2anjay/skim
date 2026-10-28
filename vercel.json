@@ -2,7 +2,17 @@
   "headers": [
     {
       "source": "/api/(.*)",
-      "headers": [{ "key": "Cache-Control", "value": "public, s-maxage=300, stale-while-revalidate=600" }]
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, s-maxage=300, stale-while-revalidate=600"
+        }
+      ]
     }
-  ]
+  ],
+  "functions": {
+    "api/*.js": {
+      "maxDuration": 30
+    }
+  }
 }

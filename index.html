@@ -48,6 +48,21 @@ button { cursor:pointer }
 .tabs button[aria-pressed=true] { color:var(--fg); border-color:var(--acc) }
 
 [hidden] { display:none !important }
+#srcwrap { display:grid; grid-template-rows:1fr; transition:grid-template-rows .3s ease, margin-bottom .3s ease; margin-bottom:16px }
+#srcwrap.closed { grid-template-rows:0fr; margin-bottom:0 }
+#srcs { min-height:0; overflow:hidden; display:flex; flex-wrap:wrap; padding:0 1px 1px 0 }
+#srcwrap.closed #srcs { visibility:hidden; transition:visibility 0s .3s }
+#srcs .sq { flex:1 1 150px; min-width:0; display:flex; align-items:center; gap:9px; background:var(--bg); color:var(--mut); border:1px solid var(--line); border-radius:0; margin:0 -1px -1px 0; padding:11px 12px; font-size:13px; text-align:left }
+#srcs .sq span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+#srcs .sq::before { content:''; flex:none; width:7px; height:7px; border-radius:50%; border:1.5px solid currentColor; transition:background-color .2s, border-color .2s }
+#srcs .sq:hover { color:var(--fg); border-color:var(--mut); position:relative }
+#srcs .sq[aria-pressed=true] { background:var(--hl); color:var(--fg) }
+#srcs .sq[aria-pressed=true]::before { background:var(--acc); border-color:var(--acc) }
+#srcs .sq.ooc { opacity:.5 }
+#srcs .sq:focus-visible { outline-offset:-2px }
+.mini, .hd { background:none; border:0; padding:4px 2px; font-size:13px; color:var(--mut) }
+.mini:hover, .hd:hover { color:var(--fg) }
+.hd { color:var(--fg); font-weight:500; margin-right:4px }
 #view { display:flex; align-items:center; gap:12px; margin-bottom:14px }
 #view .sp { margin-left:auto }
 .seg { display:inline-flex; flex:none; border:1px solid var(--line); border-radius:8px; overflow:hidden }
@@ -58,11 +73,6 @@ button { cursor:pointer }
 .flat .row { grid-template-columns:52px 1fr }
 .src { display:block; margin-top:3px; padding:0; background:none; border:0; font-size:12px; color:var(--mut); text-align:left }
 .src:hover { color:var(--fg); text-decoration:underline }
-#view .tog { display:inline-flex; align-items:center; gap:7px; flex:none; background:none; border:1px solid var(--line); border-radius:999px; padding:4px 12px 4px 10px; font-size:13px; color:var(--mut) }
-#view .tog::before { content:''; width:7px; height:7px; border-radius:50%; border:1.5px solid currentColor; transition:background-color .2s, border-color .2s }
-#view .tog:hover { border-color:var(--mut) }
-#view .tog[aria-pressed=true] { color:var(--fg); border-color:var(--acc) }
-#view .tog[aria-pressed=true]::before { background:var(--acc); border-color:var(--acc) }
 #kws { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:26px }
 #kws:empty { display:none }
 #kws span { font-size:12px; color:var(--mut); margin-right:4px }
@@ -136,7 +146,7 @@ dialog[open]::backdrop { animation:fade .22s }
 .search input:focus { outline:0; border-color:var(--acc); box-shadow:0 0 0 3px color-mix(in srgb, var(--acc) 22%, transparent) }
 .row:hover { background:var(--hl) }
 .btn:active, #view button:active, #kws button:active { transform:scale(.96) }
-body, .top, .btn, .search input, .search kbd, .tabs button, .seg button, #kws button, #view .tog, .pick, .mode, .menu div button, .row, dialog, dialog input, dialog textarea { transition:background-color .25s, color .25s, border-color .25s, box-shadow .25s, opacity .25s, transform .15s }
+body, .top, .btn, .search input, .search kbd, .tabs button, .seg button, #kws button, #srcs .sq, .mini, .hd, .pick, .mode, .menu div button, .row, dialog, dialog input, dialog textarea { transition:background-color .25s, color .25s, border-color .25s, box-shadow .25s, opacity .25s, transform .15s }
 .card { transition:margin-bottom .3s ease, border-color .25s }
 @media (prefers-reduced-motion:reduce) { *, ::before, ::after { animation:none !important; transition:none !important } }
 
@@ -152,7 +162,7 @@ body, .top, .btn, .search input, .search kbd, .tabs button, .seg button, #kws bu
   .search input { padding:12px 40px 12px 42px }
   .search kbd { display:none }
   .tabs { gap:20px; margin-bottom:14px }
-  #view { flex-wrap:wrap; gap:8px }
+  #view { flex-wrap:wrap; gap:4px 10px }
   #view .sp { display:none }
   .seg button { padding:5px 10px }
   #kws { flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; margin-bottom:18px }
@@ -185,6 +195,7 @@ body, .top, .btn, .search input, .search kbd, .tabs button, .seg button, #kws bu
   </div>
   <nav class="tabs" id="tabs" aria-label="Categories"></nav>
   <div id="view"></div>
+  <div id="srcwrap"><div id="srcs"></div></div>
   <div id="kws" aria-label="Trending keywords"></div>
   <div id="grid" aria-live="polite"><p class="empty">Loading…</p></div>
 </main>
@@ -239,8 +250,8 @@ const known = new Set();
 const paintFold = () => $('#fold').textContent = visible.some(u => openSet.has(u)) ? 'Fold all' : 'Unfold all';
 let seeded = false, visible = [], kw = '', srcPick = '';
 let view = store.get('view', 'list'), enterT;
-const off = new Set(store.get('off', [])); // aggregators switched off
-let pubOff = store.get('pubOff', false);
+const off = new Set(store.get('off', [])); // urls of sources switched off
+let srcsOpen = store.get('srcsOpen', innerWidth >= 640);
 let limit = store.get('limit', innerWidth < 640 ? 8 : 30);
 const eff = c => { const o = over[c.url] || {}; return { ...c, name: o.name || c.source, category: o.category || c.category, type: o.type || c.type, hidden: !!o.hidden }; };
 const saveOver = () => store.set('over', over);
@@ -379,7 +390,7 @@ function render(enter) {
   })));
   $('#cats').replaceChildren(...cats.map(k => h('option', { value: k })));
   const inCat = all.filter(c => cat === 'All' || c.category === cat);
-  const shown = inCat.filter(c => c.type === 'aggregator' ? !off.has(c.url) : !pubOff);
+  const shown = inCat.filter(c => !off.has(c.url));
   if (srcPick && !shown.some(c => c.url === srcPick)) srcPick = '';
   // desktop opens every card; phones open only the first one on load
   for (const c of all) if (!known.has(c.url)) { known.add(c.url); if (!narrow() || (!seeded && c === shown[0])) openSet.add(c.url); }
@@ -394,15 +405,20 @@ function render(enter) {
     textContent: label, ariaPressed: v === cur, onclick: () => { set(v); render(true); },
   })));
   const pickName = shown.find(c => c.url === srcPick)?.name;
+  const setOff = fn => { off.clear(); all.filter(fn).forEach(c => off.add(c.url)); store.set('off', [...off]); render(true); };
+  const on = all.filter(c => !off.has(c.url)).length;
+  $('#srcwrap').classList.toggle('closed', !srcsOpen);
+  $('#srcs').replaceChildren(...all.map(c => h('button', {
+    className: 'sq' + (inCat.includes(c) ? '' : ' ooc'), ariaPressed: !off.has(c.url),
+    title: (c.error ? "Couldn't load · " : '') + c.name + (c.type === 'aggregator' ? ' (aggregator)' : ''),
+    onclick: () => { off.has(c.url) ? off.delete(c.url) : off.add(c.url); store.set('off', [...off]); render(true); },
+  }, h('span', { textContent: c.name }))));
   $('#view').replaceChildren(
-    ...all.filter(c => c.type === 'aggregator').map(c => h('button', {
-      className: 'tog', textContent: c.name, ariaPressed: !off.has(c.url), title: 'Show or hide ' + c.name,
-      onclick: () => { off.has(c.url) ? off.delete(c.url) : off.add(c.url); store.set('off', [...off]); render(true); },
-    })),
-    ...(all.some(c => c.type !== 'aggregator') ? [h('button', {
-      className: 'tog', textContent: 'Publishers', ariaPressed: !pubOff, title: 'Show or hide news publishers',
-      onclick: () => { pubOff = !pubOff; store.set('pubOff', pubOff); render(true); },
-    })] : []),
+    h('button', { className: 'hd', textContent: (srcsOpen ? '▾ ' : '▸ ') + 'Sources ' + on + '/' + all.length, onclick: () => { srcsOpen = !srcsOpen; store.set('srcsOpen', srcsOpen); render(); } }),
+    h('button', { className: 'mini', textContent: 'All', onclick: () => setOff(() => false) }),
+    h('button', { className: 'mini', textContent: 'None', onclick: () => setOff(() => true) }),
+    h('button', { className: 'mini', textContent: 'Aggregators', onclick: () => setOff(c => c.type !== 'aggregator') }),
+    h('button', { className: 'mini', textContent: 'Publishers', onclick: () => setOff(c => c.type === 'aggregator') }),
     ...(pickName ? [h('button', { className: 'pick', textContent: pickName + ' ×', title: 'Show all sources', onclick: () => { srcPick = ''; render(); } })] : []),
     h('span', { className: 'sp' }),
     seg('', [['cards', 'Cards'], ['list', 'List']], view, v => { view = v; store.set('view', v); }));

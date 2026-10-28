@@ -73,6 +73,45 @@
     "site": "https://www.wsj.com/tech"
   },
   {
+    "name": "Slashdot",
+    "url": "http://rss.slashdot.org/Slashdot/slashdotMain",
+    "category": "Tech",
+    "site": "https://slashdot.org",
+    "type": "aggregator"
+  },
+  {
+    "name": "Pinboard Popular",
+    "url": "https://feeds.pinboard.in/rss/popular/",
+    "category": "Tech",
+    "site": "https://pinboard.in/popular/",
+    "type": "aggregator"
+  },
+  {
+    "name": "Tildes",
+    "url": "https://tildes.net/topics.atom",
+    "category": "Tech",
+    "site": "https://tildes.net",
+    "type": "aggregator"
+  },
+  {
+    "name": "BBC Technology",
+    "url": "https://feeds.bbci.co.uk/news/technology/rss.xml",
+    "site": "https://www.bbc.com/news/technology",
+    "category": "Tech"
+  },
+  {
+    "name": "The Hacker News",
+    "url": "https://feeds.feedburner.com/TheHackersNews",
+    "site": "https://thehackernews.com",
+    "category": "Tech"
+  },
+  {
+    "name": "Krebs on Security",
+    "url": "https://krebsonsecurity.com/feed/",
+    "site": "https://krebsonsecurity.com",
+    "category": "Tech"
+  },
+  {
     "name": "NPR",
     "url": "https://feeds.npr.org/1001/rss.xml",
     "category": "World",
@@ -115,6 +154,46 @@
     "site": "https://www.pbs.org/newshour"
   },
   {
+    "name": "Memeorandum",
+    "url": "https://www.memeorandum.com/feed.xml",
+    "category": "World",
+    "site": "https://www.memeorandum.com",
+    "type": "aggregator"
+  },
+  {
+    "name": "Mediagazer",
+    "url": "https://mediagazer.com/feed.xml",
+    "category": "World",
+    "site": "https://mediagazer.com",
+    "type": "aggregator"
+  },
+  {
+    "name": "Google News",
+    "url": "https://news.google.com/rss",
+    "category": "World",
+    "site": "https://news.google.com",
+    "type": "aggregator"
+  },
+  {
+    "name": "AllSides",
+    "url": "https://www.allsides.com/news/rss",
+    "category": "World",
+    "site": "https://www.allsides.com",
+    "type": "aggregator"
+  },
+  {
+    "name": "Semafor",
+    "url": "https://www.semafor.com/rss.xml",
+    "site": "https://www.semafor.com",
+    "category": "World"
+  },
+  {
+    "name": "FT World",
+    "url": "https://www.ft.com/world?format=rss",
+    "site": "https://www.ft.com/world",
+    "category": "World"
+  },
+  {
     "name": "CNBC",
     "url": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
     "category": "Finance",
@@ -155,6 +234,12 @@
     "url": "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml",
     "category": "Finance",
     "site": "https://www.nytimes.com/section/business"
+  },
+  {
+    "name": "BBC Business",
+    "url": "https://feeds.bbci.co.uk/news/business/rss.xml",
+    "site": "https://www.bbc.com/news/business",
+    "category": "Finance"
   },
   {
     "name": "The Verge",
@@ -216,6 +301,12 @@
     "site": "https://importai.substack.com"
   },
   {
+    "name": "MIT Tech Review AI",
+    "url": "https://www.technologyreview.com/topic/artificial-intelligence/feed",
+    "site": "https://www.technologyreview.com/topic/artificial-intelligence",
+    "category": "Claude and AI"
+  },
+  {
     "name": "Nature",
     "url": "https://www.nature.com/nature.rss",
     "category": "Science",
@@ -226,5 +317,59 @@
     "url": "https://www.science.org/rss/news_current.xml",
     "category": "Science",
     "site": "https://www.science.org/news"
+  },
+  {
+    "name": "Scientific American",
+    "url": "https://www.scientificamerican.com/platform/syndication/rss/",
+    "site": "https://www.scientificamerican.com",
+    "category": "Science"
+  },
+  {
+    "name": "Quanta Magazine",
+    "url": "https://www.quantamagazine.org/feed/",
+    "site": "https://www.quantamagazine.org",
+    "category": "Science"
+  },
+  {
+    "name": "Supply Chain Dive",
+    "url": "https://www.supplychaindive.com/feeds/news/",
+    "site": "https://www.supplychaindive.com",
+    "category": "Industry"
+  },
+  {
+    "name": "Manufacturing Dive",
+    "url": "https://www.manufacturingdive.com/feeds/news/",
+    "site": "https://www.manufacturingdive.com",
+    "category": "Industry"
+  },
+  {
+    "name": "FreightWaves",
+    "url": "https://www.freightwaves.com/news/feed",
+    "site": "https://www.freightwaves.com",
+    "category": "Industry"
+  },
+  {
+    "name": "Defense News",
+    "url": "https://www.defensenews.com/arc/outboundfeeds/rss/?outputType=xml",
+    "site": "https://www.defensenews.com",
+    "category": "Industry"
+  },
+  {
+    "name": "Breaking Defense",
+    "url": "https://breakingdefense.com/feed/",
+    "site": "https://breakingdefense.com",
+    "category": "Industry"
+  },
+  {
+    "name": "USNI News",
+    "url": "https://news.usni.org/feed",
+    "site": "https://news.usni.org",
+    "category": "Industry"
+  },
+  {
+    "name": "gCaptain",
+    "url": "https://gcaptain.com/feed/",
+    "site": "https://gcaptain.com",
+    "category": "Industry"
   }
 ]

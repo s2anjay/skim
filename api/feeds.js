@@ -32,7 +32,7 @@ module.exports = async (req, res) => {
   if (extra) {
     try { sources = JSON.parse(extra); } catch { return send(res, 400, { error: 'Bad extra parameter' }); }
   }
-  if (!Array.isArray(sources) || sources.length > 40) return send(res, 400, { error: 'Send at most 40 sources' });
+  if (!Array.isArray(sources) || sources.length > 100) return send(res, 400, { error: 'Send at most 100 sources' });
   const clean = sources.filter(s => s && typeof s.url === 'string').map(s => ({
     name: str(s.name) || s.url, url: s.url, category: str(s.category) || 'Other', site: str(s.site) || undefined, type: s.type === 'aggregator' ? 'aggregator' : undefined,
     modes: s.modes && typeof s.modes === 'object' ? s.modes : undefined,
