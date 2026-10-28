@@ -82,7 +82,7 @@ button { cursor:pointer }
 .t::before { content:''; position:absolute; left:0; top:4px; height:16px; width:3px; border-radius:2px; background:var(--acc) }
 .row a { font:500 17px/1.3 Lora,serif }
 .a1 .t::before { opacity:.65 } .a2 .t::before { opacity:.3 }
-.a2 a { color:var(--mut) }
+.row.read a::after { content:''; display:inline-block; width:6px; height:6px; margin-left:8px; border-radius:50%; background:var(--acc); vertical-align:middle }
 .row:has(a:focus-visible) { background:var(--hl); box-shadow:-8px 0 0 var(--hl); border-color:transparent }
 .row a:focus-visible { outline:0; color:var(--acc) }
 .foot, .err, .empty { font-size:13px; color:var(--mut); padding-top:10px }
@@ -186,6 +186,12 @@ async function getJSON(url) {
 
 let cards = [], mine = store.get('mine', []), over = store.get('over', {}), cat = store.get('cat', 'All');
 const mode = {};
+// links opened this browser session get a dot; sessionStorage keeps it across a refresh
+const read = new Set((() => { try { return JSON.parse(sessionStorage.getItem('skim.read') || '[]'); } catch { return []; } })());
+const markRead = (row, url) => {
+  read.add(url); row.classList.add('read');
+  try { sessionStorage.setItem('skim.read', JSON.stringify([...read])); } catch {}
+};
 const narrow = () => innerWidth < 640;
 const openSet = new Set();
 const known = new Set();
@@ -264,9 +270,10 @@ function cardEl(c, q) {
   el.append(list);
   for (const i of items) {
     const hrs = i.publishedAt ? (Date.now() - Date.parse(i.publishedAt)) / 36e5 : 6;
-    list.append(h('div', { className: 'row a' + (hrs < 3 ? 0 : hrs < 12 ? 1 : 2) },
+    list.append(h('div', { className: 'row a' + (hrs < 3 ? 0 : hrs < 12 ? 1 : 2) + (read.has(i.url) ? ' read' : '') },
       h('span', { className: 't', textContent: i.publishedAt ? ago(i.publishedAt) : '' }),
-      h('a', { href: i.url, target: '_blank', rel: 'noopener noreferrer', textContent: i.title })));
+      h('a', { href: i.url, target: '_blank', rel: 'noopener noreferrer', textContent: i.title,
+        onclick: e => markRead(e.currentTarget.parentNode, i.url), onauxclick: e => markRead(e.currentTarget.parentNode, i.url) })));
   }
   let site = c.site; try { site = site || new URL(c.url).origin; } catch {}
   el.append(h('div', { className: 'foot' }, h('a', { href: site, target: '_blank', rel: 'noopener noreferrer', textContent: 'Open ' + c.name })));
