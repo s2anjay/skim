@@ -250,7 +250,6 @@ const known = new Set();
 const paintFold = () => $('#fold').textContent = visible.some(u => openSet.has(u)) ? 'Fold all' : 'Unfold all';
 let seeded = false, visible = [], kw = '', srcPick = '';
 let view = store.get('view', 'list'), enterT;
-let period = +store.get('period', 0); // 0 = newest, else days for "best of"
 const off = new Set(store.get('off', [])); // urls of sources switched off
 let srcsOpen = store.get('srcsOpen', false);
 let limit = store.get('limit', innerWidth < 640 ? 8 : 30);
@@ -351,27 +350,10 @@ function cardEl(c, q) {
   return el;
 }
 
-// "Best of" score = how many shown sources carry the link (any mode); HN points break ties.
-// shortcut: feeds only reach back a few days, so month/week lean on sources with Week/Month modes; exact-URL match only
-function bestOf(cs, days) {
-  const by = new Map(), cutoff = Date.now() - days * 864e5;
-  for (const c of cs) if (!c.error) for (const list of Object.values(c.modes || {})) for (const i of list) {
-    if (!/^https?:\/\//i.test(i.url) || !(Date.parse(i.publishedAt) >= cutoff)) continue;
-    const e = by.get(i.url) || by.set(i.url, { ...i, src: c, srcs: new Set(), points: 0 }).get(i.url);
-    e.srcs.add(c.url); e.points = Math.max(e.points, i.points || 0);
-  }
-  return [...by.values()].map(e => ({ ...e, score: e.srcs.size }))
-    .sort((a, b) => b.score - a.score || b.points - a.points || Date.parse(b.publishedAt) - Date.parse(a.publishedAt)).slice(0, limit);
-}
-
 function listEl(cs, q) {
-  const seen = new Set();
-  let items = [];
-  if (period) items = bestOf(cs, period);
-  else {
-    for (const c of cs) if (!c.error) for (const i of itemsOf(c)) if (!seen.has(i.url)) { seen.add(i.url); items.push({ ...i, src: c }); }
-    items.sort((a, b) => (Date.parse(b.publishedAt) || 0) - (Date.parse(a.publishedAt) || 0));
-  }
+  const seen = new Set(), items = [];
+  for (const c of cs) if (!c.error) for (const i of itemsOf(c)) if (!seen.has(i.url)) { seen.add(i.url); items.push({ ...i, src: c }); }
+  items.sort((a, b) => (Date.parse(b.publishedAt) || 0) - (Date.parse(a.publishedAt) || 0));
   const box = h('div');
   const failed = cs.filter(c => c.error).length;
   if (failed && !q && !kw && !srcPick) box.append(h('p', { className: 'err' }, failed + " source" + (failed > 1 ? 's' : '') + " couldn't load · ", h('a', { href: '#', onclick: e => { e.preventDefault(); load(true); } }, 'retry')));
@@ -379,7 +361,7 @@ function listEl(cs, q) {
   if (!rows.length) box.append(h('p', { className: 'empty', textContent: q || kw || srcPick ? 'No headlines match.' : 'Nothing here.' }));
   for (const i of rows) {
     const hrs = i.publishedAt ? (Date.now() - Date.parse(i.publishedAt)) / 36e5 : 6;
-    const name = (i.src.type === 'aggregator' ? 'via ' : '') + i.src.name + (period ? ` · ${i.score} source${i.score > 1 ? 's' : ''}${i.points ? ` · ${i.points} pts` : ''}` : '');
+    const name = (i.src.type === 'aggregator' ? 'via ' : '') + i.src.name;
     box.append(h('div', { className: 'row a' + (hrs < 3 ? 0 : hrs < 12 ? 1 : 2) + (read.has(i.url) ? ' read' : '') },
       h('span', { className: 't', textContent: i.publishedAt ? ago(i.publishedAt) : '' }),
       h('div', {},
@@ -439,7 +421,6 @@ function render(enter) {
     h('button', { className: 'mini', textContent: 'Publishers', onclick: () => setOff(c => c.type === 'aggregator') }),
     ...(pickName ? [h('button', { className: 'pick', textContent: pickName + ' ×', title: 'Show all sources', onclick: () => { srcPick = ''; render(); } })] : []),
     h('span', { className: 'sp' }),
-    ...(view === 'list' ? [seg('', [[0, 'Newest'], [7, 'Best of week'], [30, 'Best of month']], period, v => { period = v; store.set('period', v); })] : []),
     seg('', [['list', 'List'], ['cards', 'Cards']], view, v => { view = v; store.set('view', v); }));
   $('#fold').hidden = view === 'list';
   $('#grid').className = (view === 'list' ? 'flat' : '') + (enter ? ' enter' : '');
