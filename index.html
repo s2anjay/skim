@@ -42,11 +42,19 @@ button { cursor:pointer }
 .search svg { position:absolute; left:16px; top:50%; translate:0 -50%; width:18px; height:18px; stroke:var(--mut); fill:none; stroke-width:2 }
 .search kbd { position:absolute; right:14px; top:50%; translate:0 -50%; border:1px solid var(--line); border-radius:5px; padding:1px 7px; font:12px Inter,sans-serif; color:var(--mut) }
 
-.tabs { display:flex; gap:26px; overflow-x:auto; border-bottom:1px solid var(--line); margin-bottom:32px; scrollbar-width:none }
+.tabs { display:flex; gap:26px; overflow-x:auto; border-bottom:1px solid var(--line); margin-bottom:18px; scrollbar-width:none }
 .tabs button { background:none; border:0; border-bottom:2px solid transparent; padding:2px 0 14px; margin-bottom:-1px; color:var(--mut); white-space:nowrap }
 .tabs button:hover { color:var(--fg) }
 .tabs button[aria-pressed=true] { color:var(--fg); border-color:var(--acc) }
 
+#kws { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:26px }
+#kws:empty { display:none }
+#kws span { font-size:12px; color:var(--mut); margin-right:4px }
+#kws button { background:none; border:1px solid var(--line); border-radius:999px; padding:4px 11px; font-size:13px }
+#kws button:hover { border-color:var(--mut) }
+#kws button small { color:var(--mut); margin-left:5px; font-size:11px }
+#kws button[aria-pressed=true] { background:var(--acc); border-color:var(--acc); color:var(--on-acc) }
+#kws button[aria-pressed=true] small { color:inherit }
 /* columns (not grid) so a folded card lets the one below it move up */
 #grid { columns:300px; column-gap:42px; padding-bottom:64px }
 .card { border-top:2px solid var(--fg); min-width:0; break-inside:avoid; margin-bottom:40px }
@@ -106,7 +114,9 @@ dialog textarea { height:84px; font:12px ui-monospace,monospace; resize:vertical
   .search { margin-bottom:14px }
   .search input { padding:12px 40px 12px 42px }
   .search kbd { display:none }
-  .tabs { gap:20px; margin-bottom:20px }
+  .tabs { gap:20px; margin-bottom:14px }
+  #kws { flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; margin-bottom:18px }
+  #kws > * { flex:none }
   .list { max-height:none; overflow:visible } /* page scrolls instead of nested boxes; use the count menu to show more */
   .row a { font-size:16px }
   .card header { padding:14px 0 12px }
@@ -134,6 +144,7 @@ dialog textarea { height:84px; font:12px ui-monospace,monospace; resize:vertical
     <kbd aria-hidden="true">/</kbd>
   </div>
   <nav class="tabs" id="tabs" aria-label="Categories"></nav>
+  <div id="kws" aria-label="Trending keywords"></div>
   <div id="grid" aria-live="polite"><p class="empty">Loading…</p></div>
 </main>
 
@@ -178,7 +189,7 @@ const mode = {};
 const narrow = () => innerWidth < 640;
 const openSet = new Set();
 const known = new Set();
-let seeded = false, visible = [];
+let seeded = false, visible = [], kw = '';
 let limit = store.get('limit', innerWidth < 640 ? 8 : 30);
 const eff = c => { const o = over[c.url] || {}; return { ...c, name: o.name || c.source, category: o.category || c.category, hidden: !!o.hidden }; };
 const saveOver = () => store.set('over', over);
@@ -202,9 +213,30 @@ async function load(fresh) {
   $('#refresh').disabled = false;
 }
 
+const modeOf = c => { const ms = Object.keys(c.modes || {}); return ms.includes(mode[c.url]) ? mode[c.url] : ms[0]; };
+
+// the headlines a card shows before search / keyword filters: deduped, newest first for Latest, capped by the count menu
+function itemsOf(c) {
+  const m = modeOf(c), seen = new Set();
+  const items = (c.modes?.[m] || []).filter(i => /^https?:\/\//i.test(i.url) && !seen.has(i.url) && seen.add(i.url));
+  if (m === 'Latest') items.sort((a, b) => (Date.parse(b.publishedAt) || 0) - (Date.parse(a.publishedAt) || 0));
+  return items.slice(0, limit);
+}
+
+const STOP = new Set(('a an the and or but if of in on at to for from by with without as is are was were be been being it its this that these those he she they them his her their our your you we i us my me do does did not no so up down out off over under into than then too very can could would should may might will just more most some any all per via vs amid about after before again against also back here there how what when where which who whom why while new news says say said get gets make makes made first last year years day days week now one two three still only other many much like take takes set sets show shows live update updates report reports big top plan plans want wants need needs people time next latest see look looks ahead behind among between because during since until through its it\'s what\'s').split(' '));
+const words = title => new Set((title.toLowerCase().match(/[\p{L}\p{N}][\p{L}\p{N}'’]*/gu) || []).map(w => w.replace(/['’]s$/, '')).filter(w => w.length > 1 && !STOP.has(w) && !/^\d+$/.test(w)));
+
+function keywords(cs) {
+  const n = new Map();
+  for (const c of cs) if (!c.error) for (const i of itemsOf(c)) for (const w of words(i.title)) n.set(w, (n.get(w) || 0) + 1);
+  const top = [...n].filter(([, k]) => k >= 3).sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).slice(0, 14);
+  if (kw && !top.some(([w]) => w === kw)) top.unshift([kw, n.get(kw) || 0]);
+  return top;
+}
+
 function cardEl(c, q) {
   const modes = Object.keys(c.modes || {});
-  const m = modes.includes(mode[c.url]) ? mode[c.url] : modes[0];
+  const m = modeOf(c);
   const el = h('section', { className: 'card' });
   const menu = h('details', { className: 'menu' }, h('summary', { textContent: '···', ariaLabel: 'Source menu' }), h('div', {},
     h('button', { textContent: 'Rename', onclick: () => edit(c, 'name', 'Rename source', c.name) }),
@@ -220,16 +252,14 @@ function cardEl(c, q) {
   hd.onclick = e => { if (e.target.closest('.menu')) return; openSet.has(c.url) ? openSet.delete(c.url) : openSet.add(c.url); render(); };
   if (modes.length > 1) el.append(h('div', { className: 'modes' }, ...modes.map(k => h('button', { className: 'mode', textContent: k, ariaPressed: k === m, onclick: () => { mode[c.url] = k; render(); } }))));
   if (c.error) {
-    if (q) return null;
+    if (q || kw) return null;
     el.append(h('p', { className: 'err' }, "Couldn't load · ", h('a', { href: '#', onclick: e => { e.preventDefault(); load(true); } }, 'retry')));
     return el;
   }
-  const seen = new Set();
-  let items = (c.modes[m] || []).filter(i => /^https?:\/\//i.test(i.url) && !seen.has(i.url) && seen.add(i.url));
-  if (m === 'Latest') items.sort((a, b) => (Date.parse(b.publishedAt) || 0) - (Date.parse(a.publishedAt) || 0));
-  items = items.slice(0, limit);
+  let items = itemsOf(c);
   if (q) items = items.filter(i => i.title.toLowerCase().includes(q));
-  if (!items.length) return q ? null : (el.append(h('p', { className: 'err', textContent: 'No items' })), el);
+  if (kw) items = items.filter(i => words(i.title).has(kw));
+  if (!items.length) return q || kw ? null : (el.append(h('p', { className: 'err', textContent: 'No items' })), el);
   const list = h('div', { className: 'list' });
   el.append(list);
   for (const i of items) {
@@ -265,8 +295,12 @@ function render() {
   seeded = true;
   visible = shown.map(c => c.url);
   $('#fold').textContent = visible.some(u => openSet.has(u)) ? 'Fold all' : 'Unfold all';
+  const top = keywords(shown);
+  $('#kws').replaceChildren(...(top.length ? [h('span', { textContent: 'Trending' }), ...top.map(([w, k]) => h('button', {
+    ariaPressed: w === kw, onclick: () => { kw = kw === w ? '' : w; render(); },
+  }, w, h('small', { textContent: k })))] : []));
   const els = shown.map(c => cardEl(c, q)).filter(Boolean);
-  $('#grid').replaceChildren(...(els.length ? els : [h('p', { className: 'empty', textContent: q ? 'No headlines match.' : 'Nothing here.' })]));
+  $('#grid').replaceChildren(...(els.length ? els : [h('p', { className: 'empty', textContent: q || kw ? 'No headlines match.' : 'Nothing here.' })]));
   const hid = all.length === cards.length ? [] : cards.map(c => ({ ...eff(c), raw: c })).filter(c => c.hidden);
   $('#hid').replaceChildren(...(hid.length ? ['Hidden: ', ...hid.map(c => h('button', {
     textContent: c.name + ' ↺', onclick: () => { over[c.url].hidden = false; saveOver(); render(); },

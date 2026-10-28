@@ -46,6 +46,30 @@
     "site": "https://www.wired.com"
   },
   {
+    "name": "NYT Technology",
+    "url": "https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml",
+    "category": "Tech",
+    "site": "https://www.nytimes.com/section/technology"
+  },
+  {
+    "name": "MIT Technology Review",
+    "url": "https://www.technologyreview.com/feed/",
+    "category": "Tech",
+    "site": "https://www.technologyreview.com"
+  },
+  {
+    "name": "IEEE Spectrum",
+    "url": "https://spectrum.ieee.org/feeds/feed.rss",
+    "category": "Tech",
+    "site": "https://spectrum.ieee.org"
+  },
+  {
+    "name": "WSJ Tech",
+    "url": "https://feeds.content.dowjones.io/public/rss/RSSWSJD",
+    "category": "Tech",
+    "site": "https://www.wsj.com/tech"
+  },
+  {
     "name": "NPR",
     "url": "https://feeds.npr.org/1001/rss.xml",
     "category": "World",
@@ -76,6 +100,18 @@
     "site": "https://www.nytimes.com/section/world"
   },
   {
+    "name": "WSJ World",
+    "url": "https://feeds.content.dowjones.io/public/rss/RSSWorldNews",
+    "category": "World",
+    "site": "https://www.wsj.com/world"
+  },
+  {
+    "name": "PBS NewsHour",
+    "url": "https://www.pbs.org/newshour/feeds/rss/headlines",
+    "category": "World",
+    "site": "https://www.pbs.org/newshour"
+  },
+  {
     "name": "CNBC",
     "url": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
     "category": "Finance",
@@ -92,6 +128,30 @@
     "url": "https://feeds.bloomberg.com/markets/news.rss",
     "category": "Finance",
     "site": "https://www.bloomberg.com/markets"
+  },
+  {
+    "name": "WSJ Markets",
+    "url": "https://feeds.content.dowjones.io/public/rss/RSSMarketsMain",
+    "category": "Finance",
+    "site": "https://www.wsj.com/finance"
+  },
+  {
+    "name": "Financial Times",
+    "url": "https://www.ft.com/rss/home",
+    "category": "Finance",
+    "site": "https://www.ft.com"
+  },
+  {
+    "name": "The Economist",
+    "url": "https://www.economist.com/finance-and-economics/rss.xml",
+    "category": "Finance",
+    "site": "https://www.economist.com/finance-and-economics"
+  },
+  {
+    "name": "NYT Business",
+    "url": "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml",
+    "category": "Finance",
+    "site": "https://www.nytimes.com/section/business"
   },
   {
     "name": "The Verge",
@@ -150,5 +210,17 @@
     "url": "https://importai.substack.com/feed",
     "category": "Claude and AI",
     "site": "https://importai.substack.com"
+  },
+  {
+    "name": "Nature",
+    "url": "https://www.nature.com/nature.rss",
+    "category": "Science",
+    "site": "https://www.nature.com/news"
+  },
+  {
+    "name": "Science",
+    "url": "https://www.science.org/rss/news_current.xml",
+    "category": "Science",
+    "site": "https://www.science.org/news"
   }
 ]
