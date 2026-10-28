@@ -272,7 +272,7 @@ const openSet = new Set();
 const known = new Set();
 const paintFold = () => $('#fold').textContent = visible.some(u => openSet.has(u)) ? 'Fold all' : 'Unfold all';
 let seeded = false, visible = [], kw = '', srcPick = '';
-let view = store.get('view', 'list'), enterT;
+let view = store.get('view', 'cards'), enterT;
 let period = +store.get('period', 0), seed = Math.random(); // 0 = newest, else days to draw a random pick from
 const off = new Set(store.get('off', [])); // urls of sources switched off
 let srcsOpen = store.get('srcsOpen', false);
