@@ -20,7 +20,8 @@ document.documentElement.dataset.theme = t || (matchMedia('(prefers-color-scheme
 body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.4 Inter,system-ui,sans-serif; -webkit-font-smoothing:antialiased }
 .wrap { max-width:1180px; margin:0 auto; padding:0 16px }
 a { color:inherit; text-decoration:none }
-button, input { font:inherit; color:inherit }
+button, input, select { font:inherit; color:inherit }
+select.btn { background:var(--bg); appearance:auto }
 button { cursor:pointer }
 :focus-visible { outline:2px solid var(--acc); outline-offset:2px }
 
@@ -98,6 +99,7 @@ dialog textarea { height:84px; font:12px ui-monospace,monospace; resize:vertical
   <div class="logo">Skim<i>.</i></div>
   <span id="upd"></span>
   <button class="btn" id="refresh">Refresh</button>
+  <select class="btn" id="limit" aria-label="Headlines per source" title="Headlines per source"><option value="5">5</option><option value="8">8</option><option value="15">15</option><option value="30">30</option></select>
   <button class="btn" id="theme"></button>
   <button class="btn pri" id="addbtn">Add source</button>
 </div></div>
@@ -150,6 +152,7 @@ async function getJSON(url) {
 
 let cards = [], mine = store.get('mine', []), over = store.get('over', {}), cat = store.get('cat', 'All');
 const mode = {};
+let limit = store.get('limit', 30);
 const eff = c => { const o = over[c.url] || {}; return { ...c, name: o.name || c.source, category: o.category || c.category, hidden: !!o.hidden }; };
 const saveOver = () => store.set('over', over);
 const saveMine = () => store.set('mine', mine);
@@ -195,6 +198,7 @@ function cardEl(c, q) {
   const seen = new Set();
   let items = (c.modes[m] || []).filter(i => /^https?:\/\//i.test(i.url) && !seen.has(i.url) && seen.add(i.url));
   if (m === 'Latest') items.sort((a, b) => (Date.parse(b.publishedAt) || 0) - (Date.parse(a.publishedAt) || 0));
+  items = items.slice(0, limit);
   if (q) items = items.filter(i => i.title.toLowerCase().includes(q));
   if (!items.length) return q ? null : (el.append(h('p', { className: 'err', textContent: 'No items' })), el);
   const list = h('div', { className: 'list' });
@@ -243,6 +247,8 @@ themeBtn.onclick = () => {
 };
 paintTheme();
 $('#refresh').onclick = () => load(true);
+$('#limit').value = limit;
+$('#limit').onchange = e => { limit = +e.target.value; store.set('limit', limit); render(); };
 $('#q').addEventListener('input', render);
 document.addEventListener('click', e => document.querySelectorAll('.menu[open]').forEach(d => d.contains(e.target) || d.removeAttribute('open')));
 
