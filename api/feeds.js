@@ -4,7 +4,7 @@ const defaults = require('../sources.json');
 // {ago:N} in a URL becomes the unix time N seconds ago, for "top this week" style queries
 const when = u => u.replace(/\{ago:(\d+)\}/g, (_, n) => Math.floor(Date.now() / 1000) - n);
 const fromJSON = text => JSON.parse(text).hits.map(h => ({
-  title: h.title, url: h.url || 'https://news.ycombinator.com/item?id=' + h.objectID, publishedAt: h.created_at,
+  title: h.title, url: h.url || 'https://news.ycombinator.com/item?id=' + h.objectID, publishedAt: h.created_at, points: h.points,
 })).filter(i => i.title);
 const parse = text => (text.trimStart()[0] === '{' ? fromJSON(text) : parseFeed(text));
 
