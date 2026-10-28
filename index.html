@@ -54,7 +54,7 @@ button { cursor:pointer }
 .seg button { background:none; border:0; padding:5px 12px; font-size:13px; color:var(--mut) }
 .seg button[aria-pressed=true] { background:var(--hl); color:var(--fg) }
 .pick { flex:none; background:var(--acc); color:var(--on-acc); border:0; border-radius:999px; padding:4px 11px; font-size:13px }
-#grid.flat { columns:auto; max-width:860px }
+#grid.flat { columns:auto; max-width:860px; margin:0 auto }
 .flat .row { grid-template-columns:52px 1fr }
 .src { display:block; margin-top:3px; padding:0; background:none; border:0; font-size:12px; color:var(--mut); text-align:left }
 .src:hover { color:var(--fg); text-decoration:underline }
@@ -211,7 +211,7 @@ const narrow = () => innerWidth < 640;
 const openSet = new Set();
 const known = new Set();
 let seeded = false, visible = [], kw = '', srcPick = '';
-let view = store.get('view', 'cards'), kind = store.get('kind', 'all');
+let view = store.get('view', 'list'), kind = store.get('kind', 'all');
 let limit = store.get('limit', innerWidth < 640 ? 8 : 30);
 const eff = c => { const o = over[c.url] || {}; return { ...c, name: o.name || c.source, category: o.category || c.category, type: o.type || c.type, hidden: !!o.hidden }; };
 const saveOver = () => store.set('over', over);
